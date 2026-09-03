@@ -99,13 +99,12 @@ module.exports = async function handler(req, res) {
     }
   }));
 
-  // Skor kurir via getPerformancePublic (opsional)
-  let scoreMap = {}; // { 'jne': { score, recommended } }
-  const apiKey = process.env.MENGANTAR_API_KEY;
-  if (apiKey && rawResults[0]?.ok) {
+  // Skor kurir via getPerformancePublic (public, tanpa API key)
+  let scoreMap = {};
+  if (rawResults[0]?.ok) {
     try {
       const perfR = await fetch(
-        `${SEARCH_BASE}/api/public/${apiKey}/order/getPerformancePublic`,
+        `${SEARCH_BASE}/api/public/order/getPerformancePublic`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
