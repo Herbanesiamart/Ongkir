@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bandingkan Ongkir Antar Gudang</title>
+<style>
+  :root {
+    --bg:     #f4f6fa;
+    --card:   #ffffff;
+    --border: #e2e8f0;
+    --text:   #1e293b;
+    --sub:    #64748b;
+    --blue:   #3b82f6;
+    --green:  #16a34a;
+    --green-bg: #f0fdf4;
+    --green-border: #86efac;
+    --yellow: #d97706;
+    --yellow-bg: #fffbeb;
+    --radius: 12px;
+    --shadow: 0 1px 4px rgba(0,0,0,.07), 0 4px 16px rgba(0,0,0,.06);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
+
+  /* HEADER */
+  .header {
+    background: var(--blue);
+    color: #fff;
+    padding: 20px 20px 16px;
+    text-align: center;
+  }
+  .header h1 { font-size: 18px; font-weight: 700; }
+  .header p  { font-size: 13px; opacity: .8; margin-top: 4px; }
+
+  /* SEARCH CARD */
+  .search-wrap { max-width: 640px; margin: 24px auto 0; padding: 0 16px; }
+  .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; }
+  .f-label { display: block; font-size: 12px; font-weight: 600; color: var(--sub); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  .f-input {
+    width: 100%; padding: 10px 13px; border: 1.5px solid var(--border);
+    border-radius: 8px; font-size: 14px; color: var(--text);
+    background: #fff; outline: none; transition: border-color .15s;
+  }
+  .f-input:focus { border-color: var(--blue); }
+  .f-row { display: grid; grid-template-columns: 1fr 110px; gap: 12px; margin-top: 14px; }
+  .suggest-wrap { position: relative; }
+  .suggest-box {
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+    background: var(--card); border: 1.5px solid var(--border);
+    border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,.1);
+    z-index: 100; display: none; max-height: 240px; overflow-y: auto;
+  }
+  .suggest-item { padding: 10px 13px; font-size: 13px; cursor: pointer; border-bottom: 1px solid var(--border); }
+  .suggest-item:last-child { border-bottom: none; }
+  .suggest-item:hover { background: #f1f5f9; }
+  .suggest-empty { padding: 12px 13px; font-size: 13px; color: var(--sub); }
+
+  .btn {
+    width: 100%; margin-top: 14px; padding: 12px;
+    background: var(--blue); color: #fff; border: none; border-radius: 8px;
+    font-size: 14px; font-weight: 600; cursor: pointer; transition: background .15s;
+  }
+  .btn:hover { background: #2563eb; }
+  .btn:disabled { background: #93c5fd; cursor: default; }
+
+  /* RESULTS */
+  .results-wrap { max-width: 640px; margin: 20px auto 40px; padding: 0 16px; }
+  .section-title { font-size: 13px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 12px; }
+
+  /* SUMMARY BANNER */
+  .summary-banner {
+    background: var(--green-bg); border: 1.5px solid var(--green-border);
+    border-radius: var(--radius); padding: 14px 16px; margin-bottom: 18px;
+    font-size: 13px; color: var(--green);
+  }
+  .summary-banner strong { font-size: 15px; }
+  .summary-row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+  .summary-pill {
+    display: flex; align-items: center; gap: 6px;
+    background: #fff; border: 1px solid var(--green-border); border-radius: 20px;
+    padding: 4px 12px; font-size: 12px; color: var(--green); font-weight: 600;
+  }
+  .summary-pill.second { color: var(--sub); border-color: var(--border); }
+
+  /* COURIER CARD */
+  .courier-card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 14px; overflow: hidden; }
+  .courier-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 13px 16px; border-bottom: 1px solid var(--border);
+    background: #f8fafc;
+  }
+  .courier-name-wrap { display: flex; align-items: center; gap: 10px; }
+  .courier-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: var(--blue); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800; letter-spacing: -.5px;
+  }
+  .courier-name { font-size: 14px; font-weight: 700; }
+  .courier-score { font-size: 11px; color: var(--sub); }
+  .reco-badge {
+    font-size: 10px; font-weight: 700; color: #b45309;
+    background: var(--yellow-bg); border: 1px solid #fcd34d;
+    border-radius: 20px; padding: 3px 8px;
+  }
+
+  /* GUDANG ROW di dalam card */
+  .gudang-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; border-bottom: 1px solid var(--border);
+    transition: background .1s;
+  }
+  .gudang-row:last-child { border-bottom: none; }
+  .gudang-row.cheapest { background: var(--green-bg); }
+  .gudang-left { display: flex; align-items: center; gap: 10px; }
+  .gudang-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+  .gudang-row.cheapest .gudang-dot { background: var(--green); }
+  .gudang-info-name { font-size: 13px; font-weight: 600; }
+  .gudang-info-est  { font-size: 11px; color: var(--sub); margin-top: 1px; }
+  .gudang-right { text-align: right; }
+  .gudang-price { font-size: 15px; font-weight: 700; color: var(--text); }
+  .gudang-row.cheapest .gudang-price { color: var(--green); }
+  .cheapest-tag { font-size: 10px; font-weight: 700; color: var(--green); margin-top: 2px; }
+  .unsupported-txt { font-size: 12px; color: #94a3b8; }
+
+  /* LOADING */
+  .loading { text-align: center; padding: 40px 20px; color: var(--sub); font-size: 14px; }
+  .spinner {
+    width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--blue);
+    border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error-box { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; padding: 12px 14px; font-size: 13px; color: #b91c1c; margin-bottom: 14px; }
+
+  .dest-label { font-size: 14px; color: var(--sub); margin-bottom: 16px; }
+  .dest-label strong { color: var(--text); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🚚 Bandingkan Ongkir Antar Gudang</h1>
+  <p>Cek harga pengiriman dari semua gudang ke tujuan yang sama</p>
+</div>
+
+<div class="search-wrap">
+  <div class="card">
+    <label class="f-label">Alamat Tujuan</label>
+    <div class="suggest-wrap">
+      <input class="f-input" id="dest-input" type="text" autocomplete="off"
+             placeholder="Ketik kecamatan / kabupaten / kelurahan..." />
+      <div class="suggest-box" id="dest-suggest"></div>
+    </div>
+
+    <div class="f-row">
+      <div>
+        <label class="f-label" style="margin-top:14px">Berat</label>
+        <input class="f-input" id="weight-input" type="number" min="0.1" step="0.1" value="1" />
+      </div>
+      <div style="display:flex;align-items:flex-end">
+        <span style="padding:10px 0;font-size:13px;color:var(--sub)">kg</span>
+      </div>
+    </div>
+
+    <button class="btn" id="btn-compare" onclick="doCompare()" disabled>
+      Pilih alamat tujuan dulu
+    </button>
+  </div>
+</div>
+
+<div class="results-wrap" id="results-wrap" style="display:none"></div>
+
+<script>
+// ── Autocomplete Alamat ───────────────────────────────────────────────────────
+let _searchTimer = null;
+let selectedDest = null;
+
+const destInput   = document.getElementById('dest-input');
+const destSuggest = document.getElementById('dest-suggest');
+const btnCompare  = document.getElementById('btn-compare');
+
+destInput.addEventListener('input', () => {
+  if (selectedDest && destInput.value !== selectedDest.label) {
+    selectedDest = null;
+    btnCompare.disabled = true;
+    btnCompare.textContent = 'Pilih alamat tujuan dulu';
+  }
+  clearTimeout(_searchTimer);
+  _searchTimer = setTimeout(runSearch, 300);
+});
+
+document.addEventListener('click', e => {
+  if (!destSuggest.contains(e.target) && e.target !== destInput) destSuggest.style.display = 'none';
+});
+
+async function runSearch() {
+  const kw = destInput.value.trim();
+  if (kw.length < 3) { destSuggest.style.display = 'none'; return; }
+  try {
+    const r = await fetch(`/api/compare?mode=search&keyword=${encodeURIComponent(kw)}`);
+    const json = await r.json();
+    if (!json.ok || !json.data.length) {
+      destSuggest.innerHTML = '<div class="suggest-empty">Alamat tidak ditemukan</div>';
+      destSuggest.style.display = 'block';
+      return;
+    }
+    destSuggest.innerHTML = json.data.map((d, i) =>
+      `<div class="suggest-item" data-i="${i}">${d.label}</div>`
+    ).join('');
+    destSuggest.style.display = 'block';
+    destSuggest.querySelectorAll('.suggest-item').forEach((el, i) => {
+      el.onclick = () => {
+        selectedDest = json.data[i];
+        destInput.value = selectedDest.label;
+        destSuggest.style.display = 'none';
+        btnCompare.disabled = false;
+        btnCompare.textContent = '🔍 Bandingkan Ongkir';
+      };
+    });
+  } catch { /* abaikan */ }
+}
+
+// ── Compare ───────────────────────────────────────────────────────────────────
+const resultsWrap = document.getElementById('results-wrap');
+
+async function doCompare() {
+  if (!selectedDest) return;
+  const weight = parseFloat(document.getElementById('weight-input').value) || 1;
+
+  resultsWrap.style.display = 'block';
+  resultsWrap.innerHTML = `<div class="loading"><div class="spinner"></div>Mengambil ongkir dari semua gudang…</div>`;
+
+  try {
+    const params = new URLSearchParams({
+      destination_id: selectedDest.id,
+      kecamatan:      selectedDest.kecamatan || '',
+      kabupaten:      selectedDest.kabupaten || '',
+      provinsi:       selectedDest.provinsi  || '',
+      weight,
+    });
+    const r = await fetch(`/api/compare?${params}`);
+    const json = await r.json();
+
+    if (!json.ok) {
+      resultsWrap.innerHTML = `<div class="error-box">⚠ ${json.reason || json.error || 'Gagal ambil data'}</div>`;
+      return;
+    }
+
+    renderResults(json);
+  } catch (e) {
+    resultsWrap.innerHTML = `<div class="error-box">⚠ Gagal terhubung ke server: ${e.message}</div>`;
+  }
+}
+
+function fmt(n) { return 'Rp ' + n.toLocaleString('id-ID'); }
+
+function renderResults(json) {
+  const { couriers, gudangSummary, destination } = json;
+  let html = '';
+
+  // Dest label
+  const destTxt = [destination.kecamatan, destination.kabupaten, destination.provinsi].filter(Boolean).join(', ');
+  html += `<div class="dest-label">Tujuan: <strong>${destTxt || selectedDest.label}</strong></div>`;
+
+  // Summary banner
+  if (gudangSummary?.length >= 2) {
+    const cheapest = gudangSummary[0];
+    const second   = gudangSummary[1];
+    const selisih  = second.avg - cheapest.avg;
+    html += `
+    <div class="summary-banner">
+      <div>Rata-rata ongkir termurah dari:</div>
+      <strong>${cheapest.nama}</strong>
+      <div class="summary-row">
+        <div class="summary-pill">🏆 ${fmt(cheapest.avg)} / kurir</div>
+        <div style="color:var(--sub);font-size:12px">selisih ~${fmt(selisih)} vs ${second.nama}</div>
+      </div>
+    </div>`;
+  }
+
+  // Courier cards
+  html += `<div class="section-title">Perbandingan per Kurir</div>`;
+
+  couriers.forEach(c => {
+    const initials = c.label.replace(/[^A-Z0-9&]/gi, '').slice(0, 3).toUpperCase();
+    const scoreTxt = c.score != null ? `Skor ${c.score}` : '';
+    html += `
+    <div class="courier-card">
+      <div class="courier-head">
+        <div class="courier-name-wrap">
+          <div class="courier-icon">${initials}</div>
+          <div>
+            <div class="courier-name">${c.label}</div>
+            ${scoreTxt ? `<div class="courier-score">${scoreTxt}</div>` : ''}
+          </div>
+        </div>
+        ${c.recommended ? '<div class="reco-badge">⭐ Rekomendasi</div>' : ''}
+      </div>`;
+
+    // Gudang rows, sudah diurutkan termurah di atas
+    c.prices.forEach((p, idx) => {
+      if (p.unsupported) {
+        html += `
+        <div class="gudang-row">
+          <div class="gudang-left">
+            <div class="gudang-dot"></div>
+            <div>
+              <div class="gudang-info-name">${p.gudang.nama}</div>
+              <div class="gudang-info-est">${p.gudang.kota}</div>
+            </div>
+          </div>
+          <div class="unsupported-txt">Tidak tersedia</div>
+        </div>`;
+      } else {
+        const isCheapest = idx === 0;
+        html += `
+        <div class="gudang-row${isCheapest ? ' cheapest' : ''}">
+          <div class="gudang-left">
+            <div class="gudang-dot"></div>
+            <div>
+              <div class="gudang-info-name">${p.gudang.nama}</div>
+              <div class="gudang-info-est">📍 ${p.gudang.kota} · ${p.estimate}</div>
+            </div>
+          </div>
+          <div class="gudang-right">
+            <div class="gudang-price">${fmt(p.price)}</div>
+            ${isCheapest && c.prices.filter(x => !x.unsupported).length > 1 ? '<div class="cheapest-tag">✓ Termurah</div>' : ''}
+          </div>
+        </div>`;
+      }
+    });
+
+    html += `</div>`;
+  });
+
+  resultsWrap.innerHTML = html;
+}
+</script>
+</body>
+</html>

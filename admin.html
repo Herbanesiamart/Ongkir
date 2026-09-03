@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin Gudang — Ongkir Compare</title>
+<style>
+  :root {
+    --bg: #f4f6fa; --card: #fff; --border: #e2e8f0; --text: #1e293b;
+    --sub: #64748b; --blue: #3b82f6; --green: #16a34a; --red: #dc2626;
+    --radius: 12px; --shadow: 0 1px 4px rgba(0,0,0,.07), 0 4px 16px rgba(0,0,0,.06);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
+
+  /* LOGIN */
+  .login-overlay {
+    position: fixed; inset: 0; background: rgba(15,23,42,.7);
+    display: flex; align-items: center; justify-content: center; z-index: 999;
+  }
+  .login-card { background: var(--card); border-radius: var(--radius); padding: 32px; width: 320px; box-shadow: var(--shadow); text-align: center; }
+  .login-card h2 { font-size: 18px; margin-bottom: 6px; }
+  .login-card p  { font-size: 13px; color: var(--sub); margin-bottom: 20px; }
+  .login-err { font-size: 12px; color: var(--red); margin-top: 8px; }
+
+  /* HEADER */
+  .header { background: var(--blue); color: #fff; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
+  .header h1 { font-size: 16px; font-weight: 700; }
+  .header a  { color: #bfdbfe; font-size: 13px; text-decoration: none; }
+
+  /* LAYOUT */
+  .wrap { max-width: 700px; margin: 24px auto 40px; padding: 0 16px; }
+
+  /* FORM TAMBAH */
+  .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px; }
+  .card-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; }
+  .f-label { display: block; font-size: 12px; font-weight: 600; color: var(--sub); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 5px; margin-top: 13px; }
+  .f-label:first-of-type { margin-top: 0; }
+  .f-input {
+    width: 100%; padding: 10px 13px; border: 1.5px solid var(--border);
+    border-radius: 8px; font-size: 14px; color: var(--text); background: #fff;
+    outline: none; transition: border-color .15s;
+  }
+  .f-input:focus { border-color: var(--blue); }
+  .suggest-wrap { position: relative; }
+  .suggest-box {
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+    background: var(--card); border: 1.5px solid var(--border);
+    border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,.1);
+    z-index: 100; display: none;
+  }
+  .suggest-item { padding: 10px 13px; font-size: 13px; cursor: pointer; border-bottom: 1px solid var(--border); }
+  .suggest-item:last-child { border-bottom: none; }
+  .suggest-item:hover { background: #f1f5f9; }
+  .origin-preview { margin-top: 8px; font-size: 12px; color: var(--green); font-weight: 600; }
+
+  .f-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .f-check { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 13px; }
+  .f-check input { width: 16px; height: 16px; }
+
+  .btn { padding: 11px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background .15s; }
+  .btn-primary { background: var(--blue); color: #fff; width: 100%; margin-top: 16px; }
+  .btn-primary:hover { background: #2563eb; }
+  .btn-primary:disabled { background: #93c5fd; cursor: default; }
+
+  /* TABLE */
+  .gudang-list { display: flex; flex-direction: column; gap: 10px; }
+  .gudang-item {
+    background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 14px 16px; display: flex; align-items: center; gap: 14px;
+  }
+  .g-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+  .g-dot.aktif { background: var(--green); }
+  .g-info { flex: 1; min-width: 0; }
+  .g-nama { font-size: 14px; font-weight: 700; }
+  .g-kota { font-size: 12px; color: var(--sub); margin-top: 2px; }
+  .g-badges { display: flex; gap: 6px; margin-top: 5px; flex-wrap: wrap; }
+  .badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+  .badge-default { background: #eff6ff; color: var(--blue); border: 1px solid #bfdbfe; }
+  .badge-nonaktif { background: #f1f5f9; color: var(--sub); border: 1px solid var(--border); }
+  .g-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .btn-sm { padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; }
+  .btn-green { background: #dcfce7; color: var(--green); }
+  .btn-green:hover { background: #bbf7d0; }
+  .btn-red { background: #fee2e2; color: var(--red); }
+  .btn-red:hover { background: #fecaca; }
+  .btn-gray { background: #f1f5f9; color: var(--sub); }
+  .btn-gray:hover { background: #e2e8f0; }
+
+  .empty-txt { text-align: center; color: var(--sub); font-size: 14px; padding: 24px; }
+  .loading-txt { color: var(--sub); font-size: 13px; text-align: center; padding: 20px; }
+  .err-txt { color: var(--red); font-size: 13px; }
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: #1e293b; color: #fff; font-size: 13px; padding: 10px 20px;
+    border-radius: 8px; z-index: 999; opacity: 0; transition: opacity .2s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div class="login-overlay" id="login-overlay" style="display:none">
+  <div class="login-card">
+    <h2>🔐 Admin Login</h2>
+    <p>Masukkan password admin untuk lanjut</p>
+    <input class="f-input" type="password" id="login-pass" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()" />
+    <div class="login-err" id="login-err" style="display:none">Password salah.</div>
+    <button class="btn btn-primary" onclick="doLogin()" style="margin-top:14px">Masuk</button>
+  </div>
+</div>
+
+<div class="header">
+  <h1>⚙️ Kelola Gudang</h1>
+  <a href="/">← Kembali ke Perbandingan</a>
+</div>
+
+<div class="wrap">
+
+  <!-- FORM TAMBAH GUDANG -->
+  <div class="card">
+    <div class="card-title">➕ Tambah Gudang Baru</div>
+
+    <label class="f-label">Nama Gudang</label>
+    <input class="f-input" id="add-nama" type="text" placeholder="cth: Gudang Makassar" />
+
+    <label class="f-label">Lokasi Gudang (cari via Mengantar)</label>
+    <div class="suggest-wrap">
+      <input class="f-input" id="add-search" type="text" autocomplete="off"
+             placeholder="Ketik nama daerah / kota gudang..." />
+      <div class="suggest-box" id="add-suggest"></div>
+    </div>
+    <div class="origin-preview" id="add-preview" style="display:none"></div>
+    <input type="hidden" id="add-origin-id" />
+    <input type="hidden" id="add-kota" />
+
+    <div class="f-check">
+      <input type="checkbox" id="add-default" />
+      <label for="add-default">Jadikan gudang default</label>
+    </div>
+
+    <button class="btn btn-primary" id="btn-add" onclick="addGudang()" disabled>
+      Pilih lokasi gudang dulu
+    </button>
+    <div class="err-txt" id="add-err" style="display:none;margin-top:8px"></div>
+  </div>
+
+  <!-- LIST GUDANG -->
+  <div class="card-title" style="margin-bottom:12px">📋 Daftar Gudang</div>
+  <div id="gudang-list" class="gudang-list">
+    <div class="loading-txt">Memuat...</div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+let adminKey = localStorage.getItem('ongkir_admin_key') || '';
+
+function showLoginOverlay() {
+  document.getElementById('login-overlay').style.display = 'flex';
+}
+function hideLoginOverlay() {
+  document.getElementById('login-overlay').style.display = 'none';
+}
+
+function doLogin() {
+  const pass = document.getElementById('login-pass').value;
+  localStorage.setItem('ongkir_admin_key', pass);
+  adminKey = pass;
+  hideLoginOverlay();
+  loadGudang();
+}
+
+// Cek auth saat load
+if (!adminKey) {
+  showLoginOverlay();
+} else {
+  loadGudang();
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function apiHeaders() {
+  return { 'Content-Type': 'application/json', 'x-admin-key': adminKey };
+}
+
+let toastTimer = null;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ── AUTOCOMPLETE LOKASI GUDANG ────────────────────────────────────────────────
+let _addTimer = null;
+const addSearch   = document.getElementById('add-search');
+const addSuggest  = document.getElementById('add-suggest');
+const addPreview  = document.getElementById('add-preview');
+const addOriginId = document.getElementById('add-origin-id');
+const addKota     = document.getElementById('add-kota');
+const btnAdd      = document.getElementById('btn-add');
+
+addSearch.addEventListener('input', () => {
+  addOriginId.value = '';
+  addPreview.style.display = 'none';
+  btnAdd.disabled = true;
+  btnAdd.textContent = 'Pilih lokasi gudang dulu';
+  clearTimeout(_addTimer);
+  _addTimer = setTimeout(runAddSearch, 300);
+});
+
+document.addEventListener('click', e => {
+  if (!addSuggest.contains(e.target) && e.target !== addSearch) addSuggest.style.display = 'none';
+});
+
+async function runAddSearch() {
+  const kw = addSearch.value.trim();
+  if (kw.length < 3) { addSuggest.style.display = 'none'; return; }
+  try {
+    const r = await fetch(`/api/gudang?mode=search&keyword=${encodeURIComponent(kw)}&key=${adminKey}`);
+    const json = await r.json();
+    if (!json.ok || !json.data?.length) {
+      addSuggest.innerHTML = '<div class="suggest-item" style="color:#94a3b8">Lokasi tidak ditemukan</div>';
+      addSuggest.style.display = 'block';
+      return;
+    }
+    addSuggest.innerHTML = json.data.map((d, i) =>
+      `<div class="suggest-item" data-i="${i}">${d.label}</div>`
+    ).join('');
+    addSuggest.style.display = 'block';
+    addSuggest.querySelectorAll('.suggest-item').forEach((el, i) => {
+      el.onclick = () => {
+        const d = json.data[i];
+        addSearch.value = d.label;
+        addOriginId.value = d.origin_id;
+        addKota.value = d.kota;
+        addSuggest.style.display = 'none';
+        addPreview.textContent = `✓ origin_id: ${d.origin_id}`;
+        addPreview.style.display = 'block';
+        btnAdd.disabled = false;
+        btnAdd.textContent = '➕ Tambah Gudang';
+      };
+    });
+  } catch { /* abaikan */ }
+}
+
+// ── ADD GUDANG ────────────────────────────────────────────────────────────────
+async function addGudang() {
+  const nama      = document.getElementById('add-nama').value.trim();
+  const origin_id = addOriginId.value.trim();
+  const kota      = addKota.value.trim();
+  const isDefault = document.getElementById('add-default').checked;
+  const errEl     = document.getElementById('add-err');
+  errEl.style.display = 'none';
+
+  if (!nama)      { errEl.textContent = 'Nama gudang wajib diisi.'; errEl.style.display = 'block'; return; }
+  if (!origin_id) { errEl.textContent = 'Pilih lokasi gudang dari daftar.'; errEl.style.display = 'block'; return; }
+
+  btnAdd.disabled = true;
+  btnAdd.textContent = 'Menyimpan...';
+
+  try {
+    const r = await fetch('/api/gudang', {
+      method: 'POST',
+      headers: apiHeaders(),
+      body: JSON.stringify({ nama, kota, origin_id, is_default: isDefault }),
+    });
+    const json = await r.json();
+    if (!json.ok) throw new Error(json.error || 'Gagal simpan');
+
+    // Reset form
+    document.getElementById('add-nama').value = '';
+    addSearch.value = '';
+    addOriginId.value = '';
+    addKota.value = '';
+    addPreview.style.display = 'none';
+    document.getElementById('add-default').checked = false;
+    btnAdd.disabled = true;
+    btnAdd.textContent = 'Pilih lokasi gudang dulu';
+
+    toast('✓ Gudang berhasil ditambahkan!');
+    loadGudang();
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+    btnAdd.disabled = false;
+    btnAdd.textContent = '➕ Tambah Gudang';
+  }
+}
+
+// ── LOAD GUDANG ───────────────────────────────────────────────────────────────
+async function loadGudang() {
+  const listEl = document.getElementById('gudang-list');
+  listEl.innerHTML = '<div class="loading-txt">Memuat...</div>';
+
+  try {
+    const r = await fetch(`/api/gudang?key=${adminKey}`);
+    if (r.status === 401) {
+      localStorage.removeItem('ongkir_admin_key');
+      adminKey = '';
+      listEl.innerHTML = '';
+      document.getElementById('login-err').style.display = 'block';
+      showLoginOverlay();
+      return;
+    }
+    const json = await r.json();
+    const list = json.data || [];
+
+    if (!list.length) {
+      listEl.innerHTML = '<div class="empty-txt">Belum ada gudang. Tambahkan di atas.</div>';
+      return;
+    }
+
+    listEl.innerHTML = list.map(g => `
+      <div class="gudang-item" id="gi-${g.id}">
+        <div class="g-dot${g.aktif ? ' aktif' : ''}"></div>
+        <div class="g-info">
+          <div class="g-nama">${g.nama}</div>
+          <div class="g-kota">📍 ${g.kota}</div>
+          <div class="g-badges">
+            ${g.is_default ? '<span class="badge badge-default">Default</span>' : ''}
+            ${!g.aktif ? '<span class="badge badge-nonaktif">Nonaktif</span>' : ''}
+          </div>
+        </div>
+        <div class="g-actions">
+          ${!g.is_default ? `<button class="btn-sm btn-green" onclick="setDefault(${g.id})">Default</button>` : ''}
+          <button class="btn-sm ${g.aktif ? 'btn-gray' : 'btn-green'}" onclick="toggleAktif(${g.id}, ${g.aktif})">
+            ${g.aktif ? 'Nonaktifkan' : 'Aktifkan'}
+          </button>
+          <button class="btn-sm btn-red" onclick="deleteGudang(${g.id}, '${g.nama}')">Hapus</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    listEl.innerHTML = `<div class="err-txt" style="padding:20px">Error: ${e.message}</div>`;
+  }
+}
+
+// ── ACTIONS ───────────────────────────────────────────────────────────────────
+async function toggleAktif(id, currentAktif) {
+  await fetch(`/api/gudang?id=${id}`, {
+    method: 'PATCH',
+    headers: apiHeaders(),
+    body: JSON.stringify({ aktif: !currentAktif }),
+  });
+  toast(`Gudang ${currentAktif ? 'dinonaktifkan' : 'diaktifkan'}`);
+  loadGudang();
+}
+
+async function setDefault(id) {
+  await fetch(`/api/gudang?id=${id}`, {
+    method: 'PATCH',
+    headers: apiHeaders(),
+    body: JSON.stringify({ is_default: true }),
+  });
+  toast('✓ Gudang default diperbarui');
+  loadGudang();
+}
+
+async function deleteGudang(id, nama) {
+  if (!confirm(`Hapus "${nama}"? Aksi ini tidak bisa dibatalkan.`)) return;
+  const r = await fetch(`/api/gudang?id=${id}`, { method: 'DELETE', headers: apiHeaders() });
+  const json = await r.json();
+  if (json.ok) { toast('Gudang dihapus'); loadGudang(); }
+  else alert('Gagal hapus: ' + json.error);
+}
+</script>
+</body>
+</html>
