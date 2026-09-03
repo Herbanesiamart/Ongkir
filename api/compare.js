@@ -4,12 +4,12 @@ const SEARCH_BASE = 'https://api-public.mengantar.com';
 
 const COURIER_MAP = {
   JNE:       'JNE',
+  LION:      'lion',
+  POS:       'pos',
   JNT:       'JT',
   SICEPAT:   'SiCepat',
   ANTERAJA:  'anteraja',
   NINJA:     'Ninja',
-  LION:      'lion',
-  POS:       'pos',
   SAP:       'SAP',
   IDEXPRESS: 'iDexpress',
 };
@@ -99,26 +99,32 @@ module.exports = async function handler(req, res) {
     }
   }));
 
-  // Skor kurir via getPerformancePublic (public, tanpa API key)
+  // Skor kurir via getPerformancePublic
+  // Kalau MENGANTAR_API_KEY ada → pakai URL dengan key (lebih reliable)
+  // Kalau tidak ada → coba endpoint public tanpa key
   let scoreMap = {};
   if (rawResults[0]?.ok) {
     try {
-      const perfR = await fetch(
-        `${SEARCH_BASE}/api/public/order/getPerformancePublic`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ city: kabupaten || '', allEstimateData: rawResults[0].data }),
-        }
-      );
+      const mKey = process.env.MENGANTAR_API_KEY;
+      const perfUrl = mKey
+        ? `${SEARCH_BASE}/api/public/${mKey}/order/getPerformancePublic`
+        : `${SEARCH_BASE}/api/public/order/getPerformancePublic`;
+      const perfR = await fetch(perfUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ city: kabupaten || '', allEstimateData: rawResults[0].data }),
+      });
       const perfJson = await perfR.json();
+      console.log('[perf] status:', perfR.status, 'success:', perfJson?.success, 'url:', perfUrl);
       if (perfJson?.success) {
         const recommended = (perfJson.data?.recommended || '').toLowerCase();
         (perfJson.data?.couriers || []).forEach(c => {
           scoreMap[c.key.toLowerCase()] = { score: c.score, recommended: c.key.toLowerCase() === recommended };
         });
+      } else {
+        console.log('[perf] response:', JSON.stringify(perfJson).slice(0, 300));
       }
-    } catch { /* skor opsional, abaikan error */ }
+    } catch (e) { console.error('[perf] error:', e.message); }
   }
 
   // Susun per kurir
