@@ -1,4 +1,4 @@
-// api/track.js — Cek resi massal via Mengantar (endpoint dari CS Input)
+// api/track.js — Cek resi massal via Mengantar (sama persis dengan CS Input)
 const https = require('https');
 
 const MENGANTAR_HEADERS = {
@@ -8,34 +8,23 @@ const MENGANTAR_HEADERS = {
   'Origin':     'https://www.mengantar.com',
 };
 
-// Courier code yang diterima Mengantar (sama persis dengan CS Input)
 const COURIER_LABEL = {
-  JNE:       'JNE',
-  JT:        'J&T Express',
-  SiCepat:   'SiCepat',
-  lion:      'Lion Parcel',
-  SAP:       'SAP Express',
-  anteraja:  'Anteraja',
-  Ninja:     'Ninja Xpress',
-  iDexpress: 'iDexpress',
-  POS:       'POS Indonesia',
+  JNE: 'JNE', JT: 'J&T Express', SiCepat: 'SiCepat', lion: 'Lion Parcel',
+  SAP: 'SAP Express', anteraja: 'Anteraja', Ninja: 'Ninja Xpress',
+  iDexpress: 'iDexpress', POS: 'POS Indonesia',
 };
 
-// Auto-detect kurir dari prefix nomor resi
 function detectCourier(resi) {
   const r = resi.toUpperCase();
-  if (/^(JD|JP|JE|JN|JT|CD|CG)/.test(r) && /^\d/.test(r.slice(2))) return null; // ambigu
-  if (/^(JD|JP|JN)\d/.test(r))   return 'JNE';
-  if (/^(JP\d|JD\d)/.test(r))    return 'JNE';
-  if (/^(JNE)/.test(r))          return 'JNE';
-  if (/^(JT|JTX)/.test(r) && r.length > 10) return 'JT';
+  if (/^JNE/.test(r))             return 'JNE';
+  if (/^(JD|JP)\d/.test(r))       return 'JNE';
   if (/^LP/.test(r))              return 'lion';
-  if (/^(SC|SCP)/.test(r))       return 'SiCepat';
+  if (/^(SC|SCP)/.test(r))        return 'SiCepat';
   if (/^(ANT|ANTJ|ANTB)/.test(r)) return 'anteraja';
-  if (/^NX/.test(r))             return 'Ninja';
-  if (/^(ID|IDX|IDEX)/.test(r))  return 'iDexpress';
-  if (/^(SAP)/.test(r))          return 'SAP';
-  if (/^(77|1D)/.test(r))        return 'POS';
+  if (/^NX/.test(r))              return 'Ninja';
+  if (/^(IDX|IDEX)/.test(r))      return 'iDexpress';
+  if (/^SAP/.test(r))             return 'SAP';
+  if (/^(77|1D)/.test(r))         return 'POS';
   return null;
 }
 
@@ -45,64 +34,103 @@ function httpGetJson(url) {
       let body = '';
       resp.on('data', chunk => body += chunk);
       resp.on('end', () => {
-        try { resolve({ status: resp.statusCode, json: JSON.parse(body) }); }
-        catch { resolve({ status: resp.statusCode, json: null, raw: body.slice(0, 300) }); }
+        try { resolve(JSON.parse(body)); }
+        catch { reject(new Error('Invalid JSON: ' + body.slice(0, 200))); }
       });
     }).on('error', reject);
   });
 }
 
-function normalizeStatus(raw) {
-  if (!raw) return { label: 'Tidak Diketahui', type: 'unknown' };
-  const s = raw.toLowerCase();
-  if (s.includes('delivered') || s.includes('terkirim') || s.includes('diterima') || s.includes('sampai')) return { label: 'Terkirim', type: 'delivered' };
-  if (s.includes('return') || s.includes('kembali') || s.includes('retur'))                                return { label: 'Retur', type: 'retur' };
-  if (s.includes('failed') || s.includes('gagal') || s.includes('problem') || s.includes('hold') || s.includes('kendala')) return { label: 'Bermasalah', type: 'problem' };
-  if (s.includes('out for delivery') || s.includes('antar') || s.includes('otw'))                         return { label: 'Dibawa Kurir', type: 'out_delivery' };
-  if (s.includes('pickup') || s.includes('manifest') || s.includes('dijemput'))                           return { label: 'Dijemput', type: 'pickup' };
-  if (s.includes('transit') || s.includes('process') || s.includes('dikirim') || s.includes('outbound') || s.includes('inbound') || s.includes('perjalanan')) return { label: 'Dalam Pengiriman', type: 'transit' };
-  return { label: raw, type: 'transit' };
+// Sama persis dengan _trNormalizeMengantar di CS Input
+function normalizeMengantar(json) {
+  if (!json || !json.success || !json.data) return null;
+  const d = json.data;
+  const history = Array.isArray(d.history) ? d.history : [];
+  const entries = history.map(h => ({
+    desc:         [h.desc, h.code].filter(Boolean).join(' '),
+    descOnly:     h.desc || '',
+    code:         h.code || null,
+    place:        h.counter_name || h.city_name || null,
+    receivedBy:   (h.receiver || '').trim() || null,
+    group:        h.type?.group || null,
+    tag:          h.type?.tag   || null,
+    reasonDelivery: null,
+  }));
+  return {
+    statusCategory: d.statusCategory || d.status || '',
+    entries,
+    rawHistory: history,
+    receiver:   d.RECEIVER_NAME || null,
+    city:       d.RECEIVER_CITY || null,
+  };
+}
+
+function isPickupPhase(e) { return !!(e && e.code && /pickup/i.test(e.code)); }
+function isSelfReceipt(e) {
+  if (!e || !e.place) return false;
+  const m = /diterima oleh\s+(.+)/i.exec(e.descOnly || '');
+  if (!m) return false;
+  const norm = s => (s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return norm(m[1]) === norm(e.place);
+}
+function hasReceivedBy(e) { return !!(e && e.receivedBy); }
+
+// Sama persis dengan trMapTrackingStage di CS Input
+function mapStage({ resi, statusCategory, entries }) {
+  if (!resi) return { stage: 'MENUNGGU_RESI', step: 1 };
+  const cat = (statusCategory || '').toUpperCase();
+  const arr = Array.isArray(entries) ? entries : [];
+  const latest = arr.length ? arr[arr.length - 1] : null;
+  const latestDesc = (latest?.desc || '').toLowerCase();
+  let reachedStep = 2;
+  arr.forEach(e => {
+    if (isPickupPhase(e)) return;
+    const d = (e.desc || '').toLowerCase();
+    if (/sedang diantar|dalam pengantaran|out for delivery|kurir menuju|\botw\b|akan dikirim ke alamat penerima|with delivery courier|delivery courier|diantar ke alamat|on delivery|1st attempt|2nd attempt|percobaan/i.test(d)) reachedStep = Math.max(reachedStep, 4);
+    else if (e.atDestination || /kota tujuan|gudang tujuan|tiba di kota|received at destination|received at warehouse|process and forward|inbound|sti-dest/i.test(d)) reachedStep = Math.max(reachedStep, 3);
+  });
+
+  let stage;
+  if (cat.includes('RETUR') || cat.includes('RETURN') || arr.some(e => /retur|dikembalikan|\brts\b|\brto\b|return to sender/i.test(e.desc || ''))) {
+    stage = 'RETUR';
+  } else if (cat === 'DELIVERED' || (/diterima oleh|\bdelivered\b|\bpod\b/.test(latestDesc) && !isSelfReceipt(latest)) || hasReceivedBy(latest)) {
+    stage = 'SAMPAI';
+  } else {
+    const hasStructuredProblem = arr.some(e => !isPickupPhase(e) && (e.group === 'UNDELIVERED' || e.tag === 'actionRequired' || !!e.reasonDelivery));
+    if (hasStructuredProblem || arr.some(e => !isPickupPhase(e) && /gagal|kendala|bermasalah|problematic|tidak ditemukan|alamat tidak (lengkap|dikenal)|tidak ada orang|tidak ditempat|tidak dihuni|menunggu konfirmasi|disimpan di gudang|ditolak|pindah alamat|box undel/i.test(e.desc || ''))) {
+      stage = 'BERMASALAH';
+    } else if (reachedStep >= 4) { stage = 'OTW';
+    } else if (reachedStep >= 3) { stage = 'KOTA_TUJUAN';
+    } else { stage = 'DIKIRIM'; }
+  }
+  return { stage, step: stage === 'SAMPAI' ? 5 : reachedStep };
 }
 
 async function trackOne({ resi, courier }) {
-  // Kalau kurir tidak diberikan → coba auto-detect
   const courierCode = courier || detectCourier(resi);
   if (!courierCode) {
     return { resi, ok: false, needCourier: true, error: 'Kurir tidak terdeteksi otomatis. Pilih kurir secara manual.' };
   }
 
-  const url = `https://app.mengantar.com/api/order/getPublic?tracking_number=${encodeURIComponent(resi)}&courier=${encodeURIComponent(courierCode)}`;
   try {
-    const { json } = await httpGetJson(url);
-    if (!json) return { resi, ok: false, error: 'Tidak ada response dari Mengantar' };
+    const url  = `https://app.mengantar.com/api/order/getPublic?tracking_number=${encodeURIComponent(resi)}&courier=${encodeURIComponent(courierCode)}`;
+    const json = await httpGetJson(url);
+    const norm = normalizeMengantar(json);
 
-    const d = json.data || json;
-    const history = (d.history || d.manifest || d.tracks || []).map(h => ({
-      time: h.date || h.time || h.created_at || h.datetime || '',
-      desc: h.description || h.note || h.status_desc || h.message || h.status || '',
-      loc:  h.location || h.city || h.pos || '',
-    }));
-
-    const rawStatus = d.status || d.last_status || history[0]?.desc || '';
-    const norm = normalizeStatus(rawStatus);
-    const latest = history[0] || {};
-
-    if (!json.success && !history.length) {
-      return { resi, ok: false, error: json.message || json.error || 'Resi tidak ditemukan' };
+    if (!norm) {
+      return { resi, ok: false, error: json?.message || json?.error || 'Resi tidak ditemukan' };
     }
+
+    const { stage, step } = mapStage({ resi, ...norm });
 
     return {
       resi, ok: true,
       courier:      courierCode,
       courierLabel: COURIER_LABEL[courierCode] || courierCode,
-      origin:       d.shipper_city || d.origin || '',
-      destination:  d.receiver_city || d.destination || '',
-      lastStatus:   rawStatus,
-      statusType:   norm.type,
-      statusLabel:  norm.label,
-      lastTime:     latest.time || '',
-      lastLoc:      latest.loc || '',
-      history,
+      receiver:     norm.receiver,
+      city:         norm.city,
+      stage, step,
+      history:      norm.rawHistory, // raw dari Mengantar, oldest first
     };
   } catch (e) {
     return { resi, ok: false, error: e.message };
@@ -119,7 +147,6 @@ module.exports = async function handler(req, res) {
   let items = req.body?.resi || [];
   if (!Array.isArray(items)) return res.status(400).json({ error: 'resi harus array' });
 
-  // Support dua format: array of string, atau array of {resi, courier}
   items = items
     .map(r => typeof r === 'string'
       ? { resi: r.trim().toUpperCase(), courier: null }
@@ -127,7 +154,6 @@ module.exports = async function handler(req, res) {
     )
     .filter(r => r.resi.length >= 5);
 
-  // Deduplikasi by resi
   const seen = new Set();
   items = items.filter(r => { if (seen.has(r.resi)) return false; seen.add(r.resi); return true; });
 
