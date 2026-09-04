@@ -60,11 +60,25 @@
 
   /* STATS */
   .stats-bar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
-  .stat-pill { display: flex; align-items: center; gap: 5px; background: var(--card); border: 1.5px solid var(--border); border-radius: 20px; padding: 5px 12px; font-size: 12px; font-weight: 600; color: var(--sub); }
+  .stats-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .stats-bar { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+  .stat-pill { display: flex; align-items: center; gap: 5px; background: var(--card); border: 1.5px solid var(--border); border-radius: 20px; padding: 5px 12px; font-size: 12px; font-weight: 600; color: var(--sub); cursor: pointer; transition: all .15s; user-select: none; }
+  .stat-pill:hover  { border-color: #94a3b8; }
+  .stat-pill.active { background: #1e293b; color: #fff; border-color: #1e293b; }
   .stat-pill.green  { border-color: var(--green-border); color: var(--green); background: var(--green-bg); }
+  .stat-pill.green:hover  { background: #dcfce7; }
+  .stat-pill.green.active { background: var(--green); color: #fff; border-color: var(--green); }
   .stat-pill.red    { border-color: #fca5a5; color: var(--red); background: var(--red-bg); }
+  .stat-pill.red:hover    { background: #fee2e2; }
+  .stat-pill.red.active   { background: var(--red); color: #fff; border-color: var(--red); }
+  .stat-pill.blue   { border-color: #bfdbfe; color: var(--blue); background: #eff6ff; }
+  .stat-pill.blue:hover   { background: #dbeafe; }
+  .stat-pill.blue.active  { background: var(--blue); color: #fff; border-color: var(--blue); }
   .stat-pill.yellow { border-color: #fcd34d; color: var(--yellow); background: var(--yellow-bg); }
+  .stat-pill.yellow.active { background: var(--yellow); color: #fff; border-color: var(--yellow); }
   .stat-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .dl-btn { flex-shrink: 0; padding: 6px 14px; background: var(--card); border: 1.5px solid var(--border); border-radius: 20px; font-size: 12px; font-weight: 600; color: var(--sub); cursor: pointer; transition: all .15s; white-space: nowrap; }
+  .dl-btn:hover { border-color: var(--blue); color: var(--blue); }
 
   /* RESI CARD */
   .resi-card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 10px; overflow: hidden; }
@@ -149,6 +163,13 @@
   .spinner { width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto 10px; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  /* PROGRESS */
+  .progress-wrap { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px 20px; margin-bottom: 14px; }
+  .progress-label { font-size: 13px; color: var(--sub); margin-bottom: 8px; display: flex; justify-content: space-between; }
+  .progress-label strong { color: var(--text); }
+  .progress-bar-bg { background: var(--border); border-radius: 99px; height: 6px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: var(--blue); border-radius: 99px; transition: width .3s; }
+
   .copy-btn { font-size: 10px; background: #f1f5f9; border: none; border-radius: 4px; padding: 2px 6px; cursor: pointer; color: var(--sub); margin-left: 6px; }
   .copy-btn:hover { background: var(--border); }
 </style>
@@ -162,12 +183,12 @@
 
 <div class="wrap">
   <div class="card">
-    <label class="f-label">Nomor Resi (1 per baris, maks. 30)</label>
+    <label class="f-label">Nomor Resi (1 per baris)</label>
     <textarea class="f-input" id="resi-input"
       placeholder="JNE1234567890&#10;SICEPAT9876543210&#10;LP1234567890&#10;..."></textarea>
     <div class="f-row">
       <div style="flex:1">
-        <div class="hint" id="resi-count-hint">Paste nomor resi, 1 per baris.</div>
+        <div class="hint" id="resi-count-hint">Paste nomor resi, 1 per baris. Tidak ada batas jumlah.</div>
         <div class="hint-info">Kurir terdeteksi otomatis dari prefix. Kalau tidak terdeteksi, pilih default di bawah.</div>
       </div>
     </div>
@@ -216,8 +237,8 @@ const COURIER_OPTIONS = Object.entries(COURIER_LABEL).map(([v,l]) =>
 document.getElementById('resi-input').addEventListener('input', () => {
   const list = parseResi();
   const hint = document.getElementById('resi-count-hint');
-  if (!list.length) hint.textContent = 'Paste nomor resi, 1 per baris.';
-  else hint.textContent = `${list.length} resi terdeteksi${list.length > 30 ? ' — maks. 30' : ''}`;
+  if (!list.length) hint.textContent = 'Paste nomor resi, 1 per baris. Tidak ada batas jumlah.';
+  else hint.textContent = `${list.length} resi terdeteksi`;
 });
 
 function parseResi() {
@@ -228,28 +249,66 @@ function parseResi() {
 }
 
 // ── Cek ──────────────────────────────────────────────────────────────────────
-let lastResults = [];
+const BATCH_SIZE = 30;
+let lastResults  = [];
+let isCeking     = false;
 
 async function doCek(retryItems = null) {
-  const resiList = retryItems || parseResi().slice(0, 30).map(r => ({ resi: r, courier: null }));
+  if (isCeking) return;
+  const resiList = retryItems || parseResi().map(r => ({ resi: r, courier: null }));
   if (!resiList.length) { alert('Masukkan minimal 1 nomor resi.'); return; }
 
   const defaultCourier = document.getElementById('default-courier').value || null;
   const items = resiList.map(r => ({ resi: r.resi, courier: r.courier || defaultCourier }));
+  const total = items.length;
+
+  isCeking     = true;
+  lastResults  = [];
+  activeFilter = 'semua';
 
   const ra = document.getElementById('results-area');
   ra.style.display = 'block';
-  ra.innerHTML = `<div class="loading"><div class="spinner"></div>Mengecek ${items.length} resi secara paralel…</div>`;
 
-  try {
-    const r    = await fetch('/api/track', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ resi: items }) });
-    const json = await r.json();
-    if (!json.ok) throw new Error(json.error || 'Gagal');
-    lastResults = json.results;
-    renderResults(json.results);
-  } catch (e) {
-    ra.innerHTML = `<div class="err-box">⚠ Gagal terhubung ke server: ${e.message}</div>`;
+  // Render progress bar awal
+  const renderProgress = (done) => {
+    const pct = Math.round((done / total) * 100);
+    ra.querySelector('#prog-fill').style.width = pct + '%';
+    ra.querySelector('#prog-label-done').textContent = done;
+    // Update stats bar
+    renderStats(lastResults, total);
+  };
+
+  ra.innerHTML = `
+    <div class="progress-wrap" id="progress-box">
+      <div class="progress-label">
+        <span>Mengecek resi… <strong><span id="prog-label-done">0</span> / ${total}</strong></span>
+        <span id="prog-pct">0%</span>
+      </div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-fill" style="width:0%"></div></div>
+    </div>
+    <div id="stats-bar-wrap"></div>
+    <div id="cards-wrap"></div>`;
+
+  // Proses per batch
+  for (let i = 0; i < items.length; i += BATCH_SIZE) {
+    const batch = items.slice(i, i + BATCH_SIZE);
+    try {
+      const r    = await fetch('/api/track', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ resi: batch }) });
+      const json = await r.json();
+      if (json.ok) lastResults.push(...json.results);
+    } catch { /* batch gagal, lanjut */ }
+
+    const done = Math.min(i + BATCH_SIZE, total);
+    ra.querySelector('#prog-label-done').textContent = done;
+    ra.querySelector('#prog-fill').style.width = Math.round((done / total) * 100) + '%';
+    renderStats(lastResults, total);
+    renderCards(lastResults);
   }
+
+  // Selesai — hapus progress bar
+  const progBox = ra.querySelector('#progress-box');
+  if (progBox) progBox.remove();
+  isCeking = false;
 }
 
 async function retryWithCourier(resi, selectEl) {
@@ -262,7 +321,8 @@ async function retryWithCourier(resi, selectEl) {
     if (!json.ok || !json.results?.[0]) throw new Error('Gagal');
     const idx = lastResults.findIndex(x => x.resi === resi);
     if (idx !== -1) lastResults[idx] = json.results[0];
-    renderResults(lastResults);
+    renderCards(lastResults);
+    renderStats(lastResults, lastResults.length);
     setTimeout(() => {
       const newIdx = lastResults.findIndex(x => x.resi === resi);
       if (newIdx !== -1) toggleDetail(newIdx, true);
@@ -272,31 +332,104 @@ async function retryWithCourier(resi, selectEl) {
   }
 }
 
+// ── Filter state ─────────────────────────────────────────────────────────────
+let activeFilter = 'semua';
+
+function filterGroup(r) {
+  if (r.stage === 'SAMPAI')                         return 'terkirim';
+  if (r.stage === 'BERMASALAH' || r.stage==='RETUR') return 'bermasalah';
+  if (!r.ok && !r.needCourier)                       return 'tidak_ditemukan';
+  if (r.needCourier)                                 return 'pilih_kurir';
+  return 'proses';
+}
+
+function setFilter(f) {
+  activeFilter = f;
+  renderStats(lastResults, lastResults.length);
+  renderCards(lastResults);
+}
+
 // ── Render results ────────────────────────────────────────────────────────────
-function renderResults(results) {
-  const delivered   = results.filter(r => r.stage === 'SAMPAI').length;
-  const problem     = results.filter(r => r.stage === 'BERMASALAH' || r.stage === 'RETUR').length;
-  const needCourier = results.filter(r => r.needCourier).length;
-  const notFound    = results.filter(r => !r.ok && !r.needCourier).length;
-  const transit     = results.length - delivered - problem - needCourier - notFound;
+function renderStats(results, total) {
+  const wrap = document.getElementById('stats-bar-wrap');
+  if (!wrap) return;
+  const delivered   = results.filter(r => filterGroup(r) === 'terkirim').length;
+  const transit     = results.filter(r => filterGroup(r) === 'proses').length;
+  const problem     = results.filter(r => filterGroup(r) === 'bermasalah').length;
+  const needCourier = results.filter(r => filterGroup(r) === 'pilih_kurir').length;
+  const notFound    = results.filter(r => filterGroup(r) === 'tidak_ditemukan').length;
 
-  let html = `<div class="stats-bar">
-    <div class="stat-pill">${results.length} total</div>
-    ${delivered   ? `<div class="stat-pill green"><div class="stat-dot"></div>${delivered} terkirim</div>` : ''}
-    ${transit     ? `<div class="stat-pill"><div class="stat-dot" style="background:#3b82f6"></div>${transit} proses</div>` : ''}
-    ${problem     ? `<div class="stat-pill red"><div class="stat-dot"></div>${problem} bermasalah</div>` : ''}
-    ${needCourier ? `<div class="stat-pill yellow"><div class="stat-dot"></div>${needCourier} pilih kurir</div>` : ''}
-    ${notFound    ? `<div class="stat-pill red"><div class="stat-dot"></div>${notFound} tidak ditemukan</div>` : ''}
+  const pill = (key, cls, dot, dotColor, count, label) => count === 0 ? '' :
+    `<div class="stat-pill ${cls}${activeFilter===key?' active':''}" onclick="setFilter('${key}')">
+      <div class="stat-dot" style="${dot?'':'background:'+dotColor}"></div>${count} ${label}
+    </div>`;
+
+  wrap.innerHTML = `<div class="stats-row">
+    <div class="stats-bar">
+      <div class="stat-pill${activeFilter==='semua'?' active':''}" onclick="setFilter('semua')">${results.length}${results.length < total ? ' / ' + total : ''} semua</div>
+      ${pill('terkirim',  'green',  true, '',        delivered,   'terkirim')}
+      ${pill('proses',    'blue',   false,'#3b82f6',  transit,     'proses')}
+      ${pill('bermasalah','red',    true, '',         problem,     'bermasalah')}
+      ${pill('pilih_kurir','yellow',true, '',         needCourier, 'pilih kurir')}
+      ${pill('tidak_ditemukan','red',true,'',         notFound,    'tidak ditemukan')}
+    </div>
+    <button class="dl-btn" onclick="downloadResi()">⬇ Download</button>
   </div>`;
+}
 
-  results.forEach((r, idx) => {
-    const meta = r.ok && r.stage ? STAGE_META[r.stage] : null;
+function getFilteredResults() {
+  if (activeFilter === 'semua') return lastResults;
+  return lastResults.filter(r => filterGroup(r) === activeFilter);
+}
+
+function downloadResi() {
+  const filtered = getFilteredResults();
+  if (!filtered.length) return;
+
+  // CSV: Resi, Kurir, Status, Update Terakhir
+  const STAGE_LABEL = {
+    SAMPAI:'Terkirim', DIKIRIM:'Dikirim', KOTA_TUJUAN:'Kota Tujuan',
+    OTW:'OTW', BERMASALAH:'Bermasalah', RETUR:'Retur',
+  };
+  const headers = ['Resi', 'Kurir', 'Status', 'Update Terakhir'];
+  const rows = filtered.map(r => {
+    const latest = r.history?.length ? r.history[r.history.length - 1] : null;
+    return [
+      r.resi,
+      r.courierLabel || '',
+      r.stage ? (STAGE_LABEL[r.stage] || r.stage) : (r.needCourier ? 'Pilih Kurir' : 'Tidak Ditemukan'),
+      latest?.date || '',
+    ];
+  });
+  const esc = v => '"' + String(v).replace(/"/g, '""') + '"';
+  const csv = [headers, ...rows].map(row => row.map(esc).join(',')).join('\r\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const label = activeFilter === 'semua' ? 'semua' : activeFilter;
+  a.href     = url;
+  a.download = `resi-${label}-${new Date().toLocaleDateString('en-CA')}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function renderCards(results) {
+  const wrap = document.getElementById('cards-wrap');
+  if (!wrap) return;
+  const filtered = getFilteredResults();
+  if (!filtered.length) {
+    wrap.innerHTML = `<div style="text-align:center;padding:32px;color:var(--sub);font-size:14px">Tidak ada resi di kategori ini.</div>`;
+    return;
+  }
+  let html = '';
+  // Pakai index dari lastResults biar toggleDetail tetap benar
+  filtered.forEach((r) => {
+    const idx        = lastResults.indexOf(r);
+    const meta       = r.ok && r.stage ? STAGE_META[r.stage] : null;
     const dotColor   = r.needCourier ? '#fcd34d' : (meta ? meta.dot : '#94a3b8');
     const badgeLabel = r.needCourier ? 'Pilih Kurir' : (meta ? meta.label : (r.ok ? 'Dikirim' : 'Tidak Ditemukan'));
     const badgeBg    = r.needCourier ? '#fffbeb' : (meta ? meta.bg : '#f8fafc');
     const badgeColor = r.needCourier ? '#d97706' : (meta ? meta.color : '#64748b');
-
-    // Subtext: kurir + latest history desc
     const latestDesc = r.ok && r.history?.length ? (r.history[r.history.length - 1].desc || '') : '';
     const courierTxt = r.courierLabel ? r.courierLabel + (latestDesc ? ' · ' : '') : '';
     const subText    = r.ok ? courierTxt + latestDesc.slice(0, 60) + (latestDesc.length > 60 ? '…' : '') : (r.error || '');
@@ -322,7 +455,7 @@ function renderResults(results) {
     </div>`;
   });
 
-  document.getElementById('results-area').innerHTML = html;
+  wrap.innerHTML = html;
 }
 
 // ── Render detail ─────────────────────────────────────────────────────────────
