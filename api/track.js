@@ -1,101 +1,112 @@
-// api/track.js — Cek resi via Mengantar API
-const SEARCH_BASE = 'https://api-public.mengantar.com';
+// api/track.js — Cek resi massal via Mengantar (endpoint dari CS Input)
+const https = require('https');
+
+const MENGANTAR_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+  'Accept':     'application/json',
+  'Referer':    'https://www.mengantar.com/',
+  'Origin':     'https://www.mengantar.com',
+};
+
+// Courier code yang diterima Mengantar (sama persis dengan CS Input)
+const COURIER_LABEL = {
+  JNE:       'JNE',
+  JT:        'J&T Express',
+  SiCepat:   'SiCepat',
+  lion:      'Lion Parcel',
+  SAP:       'SAP Express',
+  anteraja:  'Anteraja',
+  Ninja:     'Ninja Xpress',
+  iDexpress: 'iDexpress',
+  POS:       'POS Indonesia',
+};
+
+// Auto-detect kurir dari prefix nomor resi
+function detectCourier(resi) {
+  const r = resi.toUpperCase();
+  if (/^(JD|JP|JE|JN|JT|CD|CG)/.test(r) && /^\d/.test(r.slice(2))) return null; // ambigu
+  if (/^(JD|JP|JN)\d/.test(r))   return 'JNE';
+  if (/^(JP\d|JD\d)/.test(r))    return 'JNE';
+  if (/^(JNE)/.test(r))          return 'JNE';
+  if (/^(JT|JTX)/.test(r) && r.length > 10) return 'JT';
+  if (/^LP/.test(r))              return 'lion';
+  if (/^(SC|SCP)/.test(r))       return 'SiCepat';
+  if (/^(ANT|ANTJ|ANTB)/.test(r)) return 'anteraja';
+  if (/^NX/.test(r))             return 'Ninja';
+  if (/^(ID|IDX|IDEX)/.test(r))  return 'iDexpress';
+  if (/^(SAP)/.test(r))          return 'SAP';
+  if (/^(77|1D)/.test(r))        return 'POS';
+  return null;
+}
+
+function httpGetJson(url) {
+  return new Promise((resolve, reject) => {
+    https.get(url, { headers: MENGANTAR_HEADERS }, (resp) => {
+      let body = '';
+      resp.on('data', chunk => body += chunk);
+      resp.on('end', () => {
+        try { resolve({ status: resp.statusCode, json: JSON.parse(body) }); }
+        catch { resolve({ status: resp.statusCode, json: null, raw: body.slice(0, 300) }); }
+      });
+    }).on('error', reject);
+  });
+}
 
 function normalizeStatus(raw) {
   if (!raw) return { label: 'Tidak Diketahui', type: 'unknown' };
   const s = raw.toLowerCase();
-  if (s.includes('delivered') || s.includes('terkirim') || s.includes('diterima')) return { label: 'Terkirim', type: 'delivered' };
-  if (s.includes('return') || s.includes('kembali'))                                return { label: 'Retur', type: 'retur' };
-  if (s.includes('failed') || s.includes('gagal') || s.includes('problem') || s.includes('hold')) return { label: 'Bermasalah', type: 'problem' };
-  if (s.includes('out for delivery') || s.includes('antar jemput'))                return { label: 'Dibawa Kurir', type: 'out_delivery' };
-  if (s.includes('pickup') || s.includes('dijemput') || s.includes('manifest'))    return { label: 'Dijemput', type: 'pickup' };
-  if (s.includes('transit') || s.includes('on process') || s.includes('dikirim') || s.includes('dalam perjalanan') || s.includes('outbound') || s.includes('inbound')) return { label: 'Dalam Pengiriman', type: 'transit' };
+  if (s.includes('delivered') || s.includes('terkirim') || s.includes('diterima') || s.includes('sampai')) return { label: 'Terkirim', type: 'delivered' };
+  if (s.includes('return') || s.includes('kembali') || s.includes('retur'))                                return { label: 'Retur', type: 'retur' };
+  if (s.includes('failed') || s.includes('gagal') || s.includes('problem') || s.includes('hold') || s.includes('kendala')) return { label: 'Bermasalah', type: 'problem' };
+  if (s.includes('out for delivery') || s.includes('antar') || s.includes('otw'))                         return { label: 'Dibawa Kurir', type: 'out_delivery' };
+  if (s.includes('pickup') || s.includes('manifest') || s.includes('dijemput'))                           return { label: 'Dijemput', type: 'pickup' };
+  if (s.includes('transit') || s.includes('process') || s.includes('dikirim') || s.includes('outbound') || s.includes('inbound') || s.includes('perjalanan')) return { label: 'Dalam Pengiriman', type: 'transit' };
   return { label: raw, type: 'transit' };
 }
 
-async function tryFetch(url, opts = {}) {
+async function trackOne({ resi, courier }) {
+  // Kalau kurir tidak diberikan → coba auto-detect
+  const courierCode = courier || detectCourier(resi);
+  if (!courierCode) {
+    return { resi, ok: false, needCourier: true, error: 'Kurir tidak terdeteksi otomatis. Pilih kurir secara manual.' };
+  }
+
+  const url = `https://app.mengantar.com/api/order/getPublic?tracking_number=${encodeURIComponent(resi)}&courier=${encodeURIComponent(courierCode)}`;
   try {
-    const r = await fetch(url, {
-      headers: { Accept: 'application/json', ...opts.headers },
-      method: opts.method || 'GET',
-      body: opts.body,
-      signal: AbortSignal.timeout(8000),
-    });
-    const text = await r.text();
-    let json;
-    try { json = JSON.parse(text); } catch { json = null; }
-    return { status: r.status, ok: r.ok, json, text: text.slice(0, 500) };
-  } catch (e) {
-    return { status: 0, ok: false, json: null, error: e.message };
-  }
-}
+    const { json } = await httpGetJson(url);
+    if (!json) return { resi, ok: false, error: 'Tidak ada response dari Mengantar' };
 
-async function trackOne(resi, debug = false) {
-  const mKey = process.env.MENGANTAR_API_KEY || '';
+    const d = json.data || json;
+    const history = (d.history || d.manifest || d.tracks || []).map(h => ({
+      time: h.date || h.time || h.created_at || h.datetime || '',
+      desc: h.description || h.note || h.status_desc || h.message || h.status || '',
+      loc:  h.location || h.city || h.pos || '',
+    }));
 
-  // Semua kandidat endpoint yang mungkin
-  const attempts = [
-    // Dengan API key (kalau ada)
-    ...(mKey ? [
-      { url: `${SEARCH_BASE}/api/public/${mKey}/order/tracking?resi=${encodeURIComponent(resi)}`, label: 'key/tracking?resi' },
-      { url: `${SEARCH_BASE}/api/public/${mKey}/order/tracking?awb=${encodeURIComponent(resi)}`, label: 'key/tracking?awb' },
-      { url: `${SEARCH_BASE}/api/public/${mKey}/order/track?resi=${encodeURIComponent(resi)}`, label: 'key/track?resi' },
-    ] : []),
-    // Tanpa key
-    { url: `${SEARCH_BASE}/api/public/csorder/tracking?resi=${encodeURIComponent(resi)}`, label: 'csorder/tracking?resi' },
-    { url: `${SEARCH_BASE}/api/public/csorder/tracking?awb=${encodeURIComponent(resi)}`, label: 'csorder/tracking?awb' },
-    { url: `${SEARCH_BASE}/api/public/csorder/track?resi=${encodeURIComponent(resi)}`, label: 'csorder/track?resi' },
-    { url: `${SEARCH_BASE}/api/order/tracking?resi=${encodeURIComponent(resi)}`, label: 'order/tracking?resi' },
-    { url: `${SEARCH_BASE}/api/order/tracking?awb=${encodeURIComponent(resi)}`, label: 'order/tracking?awb' },
-    { url: `${SEARCH_BASE}/api/public/order/tracking?resi=${encodeURIComponent(resi)}`, label: 'public/order/tracking?resi' },
-  ];
+    const rawStatus = d.status || d.last_status || history[0]?.desc || '';
+    const norm = normalizeStatus(rawStatus);
+    const latest = history[0] || {};
 
-  const logs = [];
-
-  for (const attempt of attempts) {
-    const res = await tryFetch(attempt.url);
-    logs.push({ label: attempt.label, status: res.status, preview: res.text?.slice(0, 200) });
-
-    if (!res.ok || !res.json) continue;
-    const d = res.json;
-
-    // Cek apakah response punya data tracking yang valid
-    const data = d.data || d.result || d;
-    const history = data.history || data.manifest || data.tracking || data.tracks || data.details || [];
-    const rawStatus = data.status || data.last_status || data.latest_status || '';
-    const hasData = history.length > 0 || rawStatus;
-
-    if ((d.success || d.ok || d.status === true) && hasData) {
-      const historyMapped = history.map(h => ({
-        time: h.date || h.time || h.created_at || h.datetime || h.updated_at || '',
-        desc: h.description || h.note || h.status_desc || h.message || h.detail || h.status || '',
-        loc:  h.location || h.city || h.pos || '',
-      }));
-
-      const latest = historyMapped[0] || {};
-      const norm = normalizeStatus(rawStatus || latest.desc);
-
-      return {
-        resi, ok: true,
-        courier:     data.courier || data.courier_name || data.kurir || data.ekspedisi || '',
-        origin:      data.shipper_city || data.origin || data.pengirim_kota || '',
-        destination: data.receiver_city || data.destination || data.tujuan_kota || '',
-        lastStatus:  rawStatus,
-        statusType:  norm.type,
-        statusLabel: norm.label,
-        lastTime:    latest.time || '',
-        lastLoc:     latest.loc || '',
-        history:     historyMapped,
-        ...(debug ? { _debug: logs } : {}),
-      };
+    if (!json.success && !history.length) {
+      return { resi, ok: false, error: json.message || json.error || 'Resi tidak ditemukan' };
     }
-  }
 
-  return {
-    resi, ok: false,
-    error: 'Resi tidak ditemukan atau layanan tidak tersedia',
-    ...(debug ? { _debug: logs } : {}),
-  };
+    return {
+      resi, ok: true,
+      courier:      courierCode,
+      courierLabel: COURIER_LABEL[courierCode] || courierCode,
+      origin:       d.shipper_city || d.origin || '',
+      destination:  d.receiver_city || d.destination || '',
+      lastStatus:   rawStatus,
+      statusType:   norm.type,
+      statusLabel:  norm.label,
+      lastTime:     latest.time || '',
+      lastLoc:      latest.loc || '',
+      history,
+    };
+  } catch (e) {
+    return { resi, ok: false, error: e.message };
+  }
 }
 
 module.exports = async function handler(req, res) {
@@ -105,15 +116,24 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
   if (req.method !== 'POST')    return res.status(405).json({ error: 'Method not allowed' });
 
-  let resiList = req.body?.resi || [];
-  const debug  = req.body?.debug === true;
+  let items = req.body?.resi || [];
+  if (!Array.isArray(items)) return res.status(400).json({ error: 'resi harus array' });
 
-  if (!Array.isArray(resiList)) return res.status(400).json({ error: 'resi harus array' });
+  // Support dua format: array of string, atau array of {resi, courier}
+  items = items
+    .map(r => typeof r === 'string'
+      ? { resi: r.trim().toUpperCase(), courier: null }
+      : { resi: String(r.resi || '').trim().toUpperCase(), courier: r.courier || null }
+    )
+    .filter(r => r.resi.length >= 5);
 
-  resiList = [...new Set(resiList.map(r => String(r).trim().toUpperCase()).filter(r => r.length >= 5))];
-  if (!resiList.length) return res.status(400).json({ error: 'Tidak ada nomor resi valid' });
-  if (resiList.length > 30) return res.status(400).json({ error: 'Maksimal 30 resi sekaligus' });
+  // Deduplikasi by resi
+  const seen = new Set();
+  items = items.filter(r => { if (seen.has(r.resi)) return false; seen.add(r.resi); return true; });
 
-  const results = await Promise.all(resiList.map(r => trackOne(r, debug)));
+  if (!items.length) return res.status(400).json({ error: 'Tidak ada nomor resi valid' });
+  if (items.length > 30) return res.status(400).json({ error: 'Maksimal 30 resi sekaligus' });
+
+  const results = await Promise.all(items.map(trackOne));
   return res.json({ ok: true, results });
 };
