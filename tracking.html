@@ -19,17 +19,14 @@
     --red-bg: #fef2f2;
     --yellow: #d97706;
     --yellow-bg: #fffbeb;
+    --purple: #7c3aed;
     --radius: 12px;
     --shadow: 0 1px 4px rgba(0,0,0,.07), 0 4px 16px rgba(0,0,0,.06);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
 
-  .header {
-    background: var(--blue); color: #fff;
-    padding: 16px 20px;
-    display: flex; align-items: center; justify-content: space-between;
-  }
+  .header { background: var(--blue); color: #fff; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
   .header h1 { font-size: 18px; font-weight: 700; }
   .header a  { color: #bfdbfe; font-size: 13px; text-decoration: none; }
 
@@ -54,25 +51,16 @@
   }
   select.f-select:focus { border-color: var(--blue); }
 
-  .hint { font-size: 11px; color: var(--sub); margin-top: 6px; }
+  .hint      { font-size: 11px; color: var(--sub); margin-top: 6px; }
   .hint-info { font-size: 11px; color: var(--blue); margin-top: 4px; }
 
-  .btn {
-    flex: 0 0 auto; padding: 11px 22px;
-    background: var(--blue); color: #fff; border: none; border-radius: 8px;
-    font-size: 14px; font-weight: 600; cursor: pointer; transition: background .15s;
-  }
-  .btn:hover  { background: #2563eb; }
+  .btn { flex: 0 0 auto; padding: 11px 22px; background: var(--blue); color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background .15s; }
+  .btn:hover    { background: #2563eb; }
   .btn:disabled { background: #93c5fd; cursor: default; }
-  .btn-full { width: 100%; margin-top: 14px; padding: 12px; }
 
   /* STATS */
   .stats-bar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
-  .stat-pill {
-    display: flex; align-items: center; gap: 5px;
-    background: var(--card); border: 1.5px solid var(--border);
-    border-radius: 20px; padding: 5px 12px; font-size: 12px; font-weight: 600; color: var(--sub);
-  }
+  .stat-pill { display: flex; align-items: center; gap: 5px; background: var(--card); border: 1.5px solid var(--border); border-radius: 20px; padding: 5px 12px; font-size: 12px; font-weight: 600; color: var(--sub); }
   .stat-pill.green  { border-color: var(--green-border); color: var(--green); background: var(--green-bg); }
   .stat-pill.red    { border-color: #fca5a5; color: var(--red); background: var(--red-bg); }
   .stat-pill.yellow { border-color: #fcd34d; color: var(--yellow); background: var(--yellow-bg); }
@@ -80,62 +68,73 @@
 
   /* RESI CARD */
   .resi-card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 10px; overflow: hidden; }
-  .resi-head {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 13px 16px; cursor: pointer; user-select: none;
-    border-bottom: 1px solid transparent; transition: background .1s;
-  }
+  .resi-head { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; cursor: pointer; user-select: none; border-bottom: 1px solid transparent; transition: background .1s; }
   .resi-head:hover { background: #f8fafc; }
   .resi-head.open  { border-bottom-color: var(--border); }
 
   .resi-left { display: flex; align-items: center; gap: 12px; min-width: 0; overflow: hidden; }
-  .status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .s-delivered    { background: var(--green); }
-  .s-transit      { background: var(--blue); }
-  .s-out_delivery { background: #8b5cf6; }
-  .s-pickup       { background: #0ea5e9; }
-  .s-problem      { background: var(--red); }
-  .s-retur        { background: var(--yellow); }
-  .s-unknown, .s-error, .s-need_courier { background: #94a3b8; }
+  .stage-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 
   .resi-num { font-size: 13px; font-weight: 700; font-family: 'SF Mono', monospace; }
   .resi-sub { font-size: 11px; color: var(--sub); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px; }
   .resi-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-  .status-badge {
-    font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; white-space: nowrap;
-  }
-  .badge-delivered    { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
-  .badge-transit      { background: #eff6ff; color: var(--blue); border: 1px solid #bfdbfe; }
-  .badge-out_delivery { background: #f5f3ff; color: #7c3aed; border: 1px solid #ddd6fe; }
-  .badge-pickup       { background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd; }
-  .badge-problem      { background: var(--red-bg); color: var(--red); border: 1px solid #fca5a5; }
-  .badge-retur        { background: var(--yellow-bg); color: var(--yellow); border: 1px solid #fcd34d; }
-  .badge-unknown, .badge-error { background: #f8fafc; color: var(--sub); border: 1px solid var(--border); }
-  .badge-need_courier { background: var(--yellow-bg); color: var(--yellow); border: 1px solid #fcd34d; }
+
+  .stage-badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
 
   .chevron { font-size: 11px; color: var(--sub); transition: transform .2s; }
   .chevron.open { transform: rotate(90deg); }
 
-  .resi-detail { display: none; padding: 14px 16px; }
+  .resi-detail { display: none; padding: 16px; }
   .resi-detail.open { display: block; }
 
+  /* STEPPER — sama dengan CS Input */
+  .tr-stepper { display: flex; align-items: flex-start; gap: 0; margin: 0 0 18px; }
+  .tr-step { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; }
+  .tr-step-line {
+    position: absolute; top: 11px; left: 50%; right: -50%;
+    height: 2px; background: var(--border); z-index: 0;
+  }
+  .tr-step:last-child .tr-step-line { display: none; }
+  .tr-step-circle {
+    width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border);
+    background: var(--card); color: var(--sub); font-size: 10px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; z-index: 1; transition: all .2s;
+  }
+  .tr-step-label { font-size: 9px; color: var(--sub); margin-top: 5px; text-align: center; line-height: 1.3; }
+  /* Done */
+  .tr-step-done .tr-step-circle  { background: var(--green); border-color: var(--green); color: #fff; }
+  .tr-step-done .tr-step-line    { background: var(--green); }
+  .tr-step-done .tr-step-label   { color: var(--green); }
+  /* Active */
+  .tr-step-active .tr-step-circle { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .tr-step-active .tr-step-label  { color: var(--blue); font-weight: 700; }
+  /* Problem */
+  .tr-step-problem .tr-step-circle { background: var(--red); border-color: var(--red); color: #fff; }
+  .tr-step-problem .tr-step-label  { color: var(--red); font-weight: 700; }
+  /* Retur */
+  .tr-step-retur .tr-step-circle { background: var(--yellow); border-color: var(--yellow); color: #fff; }
+  .tr-step-retur .tr-step-label  { color: var(--yellow); font-weight: 700; }
+
+  /* META ROW */
   .meta-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
   .meta-item { font-size: 12px; color: var(--sub); }
   .meta-item strong { color: var(--text); font-size: 13px; display: block; margin-top: 2px; }
 
-  .timeline-title { font-size: 11px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
-  .timeline { display: flex; flex-direction: column; }
-  .tl-item { display: flex; gap: 12px; }
-  .tl-line-wrap { display: flex; flex-direction: column; align-items: center; }
-  .tl-dot-outer { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--blue); background: #fff; flex-shrink: 0; margin-top: 2px; }
-  .tl-item:first-child .tl-dot-outer { background: var(--blue); }
-  .tl-line { width: 2px; flex: 1; background: var(--border); margin: 2px 0; min-height: 12px; }
-  .tl-item:last-child .tl-line { display: none; }
-  .tl-body { padding-bottom: 14px; }
-  .tl-desc { font-size: 13px; color: var(--text); }
-  .tl-meta { font-size: 11px; color: var(--sub); margin-top: 2px; }
+  /* HISTORY — gaya CS Input */
+  .history-title { font-size: 11px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+  .history-list  { display: flex; flex-direction: column; gap: 0; }
+  .history-item  { display: flex; gap: 12px; }
+  .history-dot-wrap { display: flex; flex-direction: column; align-items: center; }
+  .history-dot  { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+  .history-line { width: 2px; flex: 1; background: var(--border); margin: 3px 0; min-height: 10px; }
+  .history-item:last-child .history-line { display: none; }
+  .history-body { padding-bottom: 14px; }
+  .history-desc { font-size: 12.5px; color: var(--text); }
+  .history-desc.latest { font-weight: 700; }
+  .history-meta { font-size: 11px; color: var(--sub); margin-top: 2px; }
 
-  /* Need courier select */
+  /* Need courier */
   .need-courier-box {
     background: var(--yellow-bg); border: 1px solid #fcd34d;
     border-radius: 8px; padding: 10px 12px; font-size: 12px; color: var(--yellow);
@@ -166,17 +165,15 @@
     <label class="f-label">Nomor Resi (1 per baris, maks. 30)</label>
     <textarea class="f-input" id="resi-input"
       placeholder="JNE1234567890&#10;SICEPAT9876543210&#10;LP1234567890&#10;..."></textarea>
-
     <div class="f-row">
       <div style="flex:1">
         <div class="hint" id="resi-count-hint">Paste nomor resi, 1 per baris.</div>
-        <div class="hint-info">Kurir terdeteksi otomatis dari prefix resi. Kalau tidak terdeteksi, bisa pilih manual di bawah.</div>
+        <div class="hint-info">Kurir terdeteksi otomatis dari prefix. Kalau tidak terdeteksi, pilih default di bawah.</div>
       </div>
     </div>
-
     <div class="f-row">
       <select class="f-select" id="default-courier">
-        <option value="">Kurir default (kalau tidak terdeteksi otomatis)</option>
+        <option value="">Kurir default (kalau tidak terdeteksi)</option>
         <option value="JNE">JNE</option>
         <option value="JT">J&amp;T Express</option>
         <option value="SiCepat">SiCepat</option>
@@ -195,36 +192,42 @@
 </div>
 
 <script>
+// ── Stage config (sama dengan CS Input) ──────────────────────────────────────
+const STAGE_META = {
+  DIKIRIM:     { label:'🚚 Dikirim',      color:'#3b82f6', bg:'#eff6ff',   dot:'#3b82f6', step:2 },
+  KOTA_TUJUAN: { label:'🏙️ Kota Tujuan', color:'#3b82f6', bg:'#eff6ff',   dot:'#3b82f6', step:3 },
+  OTW:         { label:'🛵 OTW',          color:'#7c3aed', bg:'#f5f3ff',   dot:'#7c3aed', step:4 },
+  SAMPAI:      { label:'✅ Sampai',       color:'#16a34a', bg:'#f0fdf4',   dot:'#16a34a', step:5 },
+  BERMASALAH:  { label:'⚠️ Bermasalah',   color:'#dc2626', bg:'#fef2f2',   dot:'#dc2626', step:2, problem:true },
+  RETUR:       { label:'↩️ Retur',        color:'#d97706', bg:'#fffbeb',   dot:'#d97706', step:2, retur:true },
+};
+const STEP_LABELS = ['Konfirmasi','Dikirim','Kota Tujuan','OTW','Sampai'];
+
 const COURIER_LABEL = {
   JNE:'JNE', JT:'J&T Express', SiCepat:'SiCepat', lion:'Lion Parcel',
   SAP:'SAP Express', anteraja:'Anteraja', Ninja:'Ninja Xpress',
   iDexpress:'iDexpress', POS:'POS Indonesia',
 };
-const COURIER_OPTIONS = Object.entries(COURIER_LABEL).map(([v, l]) =>
+const COURIER_OPTIONS = Object.entries(COURIER_LABEL).map(([v,l]) =>
   `<option value="${v}">${l}</option>`
 ).join('');
 
 // ── Input counter ─────────────────────────────────────────────────────────────
-const resiInput = document.getElementById('resi-input');
-resiInput.addEventListener('input', updateCount);
-
-function parseResi() {
-  return [...new Set(
-    resiInput.value.split('\n')
-      .map(r => r.trim().toUpperCase())
-      .filter(r => r.length >= 5)
-  )];
-}
-
-function updateCount() {
+document.getElementById('resi-input').addEventListener('input', () => {
   const list = parseResi();
   const hint = document.getElementById('resi-count-hint');
   if (!list.length) hint.textContent = 'Paste nomor resi, 1 per baris.';
-  else hint.textContent = `${list.length} resi terdeteksi${list.length > 30 ? ' — maks. 30, sisanya diabaikan' : ''}`;
+  else hint.textContent = `${list.length} resi terdeteksi${list.length > 30 ? ' — maks. 30' : ''}`;
+});
+
+function parseResi() {
+  return [...new Set(
+    document.getElementById('resi-input').value
+      .split('\n').map(r => r.trim().toUpperCase()).filter(r => r.length >= 5)
+  )];
 }
 
 // ── Cek ──────────────────────────────────────────────────────────────────────
-const resultsArea = document.getElementById('results-area');
 let lastResults = [];
 
 async function doCek(retryItems = null) {
@@ -232,60 +235,47 @@ async function doCek(retryItems = null) {
   if (!resiList.length) { alert('Masukkan minimal 1 nomor resi.'); return; }
 
   const defaultCourier = document.getElementById('default-courier').value || null;
-  // Pasang default courier ke yang belum punya courier
   const items = resiList.map(r => ({ resi: r.resi, courier: r.courier || defaultCourier }));
 
-  resultsArea.style.display = 'block';
-  resultsArea.innerHTML = `<div class="loading"><div class="spinner"></div>Mengecek ${items.length} resi secara paralel…</div>`;
+  const ra = document.getElementById('results-area');
+  ra.style.display = 'block';
+  ra.innerHTML = `<div class="loading"><div class="spinner"></div>Mengecek ${items.length} resi secara paralel…</div>`;
 
   try {
-    const r = await fetch('/api/track', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ resi: items }),
-    });
+    const r    = await fetch('/api/track', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ resi: items }) });
     const json = await r.json();
     if (!json.ok) throw new Error(json.error || 'Gagal');
     lastResults = json.results;
     renderResults(json.results);
   } catch (e) {
-    resultsArea.innerHTML = `<div class="err-box">⚠ Gagal terhubung ke server: ${e.message}</div>`;
+    ra.innerHTML = `<div class="err-box">⚠ Gagal terhubung ke server: ${e.message}</div>`;
   }
 }
 
-// ── Retry satu resi dengan kurir yang dipilih ─────────────────────────────────
 async function retryWithCourier(resi, selectEl) {
   const courier = selectEl.value;
   if (!courier) return;
-  selectEl.disabled = true;
-  selectEl.nextElementSibling.disabled = true;
-
+  selectEl.disabled = true; selectEl.nextElementSibling.disabled = true;
   try {
-    const r = await fetch('/api/track', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ resi: [{ resi, courier }] }),
-    });
+    const r    = await fetch('/api/track', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ resi: [{ resi, courier }] }) });
     const json = await r.json();
     if (!json.ok || !json.results?.[0]) throw new Error('Gagal');
-
-    // Update lastResults dan re-render
     const idx = lastResults.findIndex(x => x.resi === resi);
     if (idx !== -1) lastResults[idx] = json.results[0];
     renderResults(lastResults);
-    // Buka card yang baru diretry
-    const cardIdx = lastResults.findIndex(x => x.resi === resi);
-    if (cardIdx !== -1) setTimeout(() => toggleDetail(cardIdx, true), 50);
+    setTimeout(() => {
+      const newIdx = lastResults.findIndex(x => x.resi === resi);
+      if (newIdx !== -1) toggleDetail(newIdx, true);
+    }, 50);
   } catch {
-    selectEl.disabled = false;
-    selectEl.nextElementSibling.disabled = false;
+    selectEl.disabled = false; selectEl.nextElementSibling.disabled = false;
   }
 }
 
-// ── Render ────────────────────────────────────────────────────────────────────
+// ── Render results ────────────────────────────────────────────────────────────
 function renderResults(results) {
-  const delivered   = results.filter(r => r.ok && r.statusType === 'delivered').length;
-  const problem     = results.filter(r => r.ok && (r.statusType === 'problem' || r.statusType === 'retur')).length;
+  const delivered   = results.filter(r => r.stage === 'SAMPAI').length;
+  const problem     = results.filter(r => r.stage === 'BERMASALAH' || r.stage === 'RETUR').length;
   const needCourier = results.filter(r => r.needCourier).length;
   const notFound    = results.filter(r => !r.ok && !r.needCourier).length;
   const transit     = results.length - delivered - problem - needCourier - notFound;
@@ -293,30 +283,36 @@ function renderResults(results) {
   let html = `<div class="stats-bar">
     <div class="stat-pill">${results.length} total</div>
     ${delivered   ? `<div class="stat-pill green"><div class="stat-dot"></div>${delivered} terkirim</div>` : ''}
-    ${transit     ? `<div class="stat-pill"><div class="stat-dot" style="background:var(--blue)"></div>${transit} proses</div>` : ''}
+    ${transit     ? `<div class="stat-pill"><div class="stat-dot" style="background:#3b82f6"></div>${transit} proses</div>` : ''}
     ${problem     ? `<div class="stat-pill red"><div class="stat-dot"></div>${problem} bermasalah</div>` : ''}
     ${needCourier ? `<div class="stat-pill yellow"><div class="stat-dot"></div>${needCourier} pilih kurir</div>` : ''}
     ${notFound    ? `<div class="stat-pill red"><div class="stat-dot"></div>${notFound} tidak ditemukan</div>` : ''}
   </div>`;
 
   results.forEach((r, idx) => {
-    const type  = r.needCourier ? 'need_courier' : (r.ok ? r.statusType : 'error');
-    const label = r.needCourier ? 'Pilih Kurir' : (r.ok ? r.statusLabel : 'Tidak Ditemukan');
-    const lastDesc = r.ok && r.history?.length ? r.history[0].desc : '';
-    const courierTxt = r.courierLabel ? `${r.courierLabel} · ` : '';
+    const meta = r.ok && r.stage ? STAGE_META[r.stage] : null;
+    const dotColor   = r.needCourier ? '#fcd34d' : (meta ? meta.dot : '#94a3b8');
+    const badgeLabel = r.needCourier ? 'Pilih Kurir' : (meta ? meta.label : (r.ok ? 'Dikirim' : 'Tidak Ditemukan'));
+    const badgeBg    = r.needCourier ? '#fffbeb' : (meta ? meta.bg : '#f8fafc');
+    const badgeColor = r.needCourier ? '#d97706' : (meta ? meta.color : '#64748b');
+
+    // Subtext: kurir + latest history desc
+    const latestDesc = r.ok && r.history?.length ? (r.history[r.history.length - 1].desc || '') : '';
+    const courierTxt = r.courierLabel ? r.courierLabel + (latestDesc ? ' · ' : '') : '';
+    const subText    = r.ok ? courierTxt + latestDesc.slice(0, 60) + (latestDesc.length > 60 ? '…' : '') : (r.error || '');
 
     html += `
     <div class="resi-card" id="card-${idx}">
       <div class="resi-head" onclick="toggleDetail(${idx})">
         <div class="resi-left">
-          <div class="status-dot s-${type}"></div>
+          <div class="stage-dot" style="background:${dotColor}"></div>
           <div style="min-width:0">
             <div class="resi-num">${r.resi}<button class="copy-btn" onclick="copyResi(event,'${r.resi}')">copy</button></div>
-            <div class="resi-sub">${courierTxt}${lastDesc ? lastDesc.slice(0, 70) + (lastDesc.length > 70 ? '…' : '') : (r.error || '')}</div>
+            <div class="resi-sub">${subText}</div>
           </div>
         </div>
         <div class="resi-right">
-          <span class="status-badge badge-${type}">${label}</span>
+          <span class="stage-badge" style="background:${badgeBg};color:${badgeColor};border:1px solid ${badgeColor}22">${badgeLabel}</span>
           <span class="chevron" id="chev-${idx}">▶</span>
         </div>
       </div>
@@ -326,62 +322,93 @@ function renderResults(results) {
     </div>`;
   });
 
-  resultsArea.innerHTML = html;
+  document.getElementById('results-area').innerHTML = html;
 }
 
+// ── Render detail ─────────────────────────────────────────────────────────────
 function renderDetail(r) {
-  // Butuh pilih kurir
   if (r.needCourier) {
     return `<div class="need-courier-box">
-      ⚠ Kurir tidak terdeteksi otomatis dari nomor resi ini. Pilih manual:
-      <select onchange="">${COURIER_OPTIONS}</select>
+      ⚠ Kurir tidak terdeteksi. Pilih manual:
+      <select>${COURIER_OPTIONS}</select>
       <button onclick="retryWithCourier('${r.resi}', this.previousElementSibling)">Cek →</button>
     </div>`;
   }
-
   if (!r.ok) return `<div class="err-box">⚠ ${r.error}</div>`;
 
+  const meta    = STAGE_META[r.stage] || STAGE_META['DIKIRIM'];
+  const allDone = r.stage === 'SAMPAI';
   let html = '';
+
+  // Meta info
   const metas = [];
-  if (r.courierLabel)  metas.push({ label: 'Kurir',    val: r.courierLabel });
-  if (r.origin)        metas.push({ label: 'Pengirim', val: r.origin });
-  if (r.destination)   metas.push({ label: 'Tujuan',   val: r.destination });
-  if (r.lastTime)      metas.push({ label: 'Update',   val: r.lastTime });
+  if (r.courierLabel) metas.push({ label:'Kurir',    val: r.courierLabel });
+  if (r.receiver)     metas.push({ label:'Diterima', val: r.receiver });
+  if (r.city)         metas.push({ label:'Kota',     val: r.city });
   if (metas.length) {
     html += `<div class="meta-row">${metas.map(m =>
       `<div class="meta-item">${m.label}<strong>${m.val}</strong></div>`
     ).join('')}</div>`;
   }
 
+  // Stepper
+  html += `<div class="tr-stepper">${STEP_LABELS.map((label, i) => {
+    const idx = i + 1;
+    let cls = 'tr-step';
+    if (allDone || idx < meta.step)     cls += ' tr-step-done';
+    else if (idx === meta.step) {
+      if (meta.problem) cls += ' tr-step-problem';
+      else if (meta.retur) cls += ' tr-step-retur';
+      else cls += ' tr-step-active';
+    }
+    const icon = (allDone || idx < meta.step) ? '✓' : idx;
+    return `<div class="${cls}"><div class="tr-step-line"></div><div class="tr-step-circle">${icon}</div><div class="tr-step-label">${label}</div></div>`;
+  }).join('')}</div>`;
+
+  // History — reverse agar terbaru di atas (sama dengan CS Input)
   if (!r.history?.length) {
     html += `<div style="font-size:13px;color:var(--sub)">Tidak ada riwayat tersedia.</div>`;
     return html;
   }
 
-  html += `<div class="timeline-title">Riwayat Pengiriman</div><div class="timeline">`;
-  r.history.forEach(h => {
-    const loc = h.loc ? ` · ${h.loc}` : '';
+  const historyReversed = [...r.history].reverse();
+  html += `<div class="history-title">Riwayat Pengiriman</div>
+  <div class="history-list">`;
+
+  historyReversed.forEach((h, i) => {
+    const isLatest  = i === 0;
+    const dotColor  = isLatest ? meta.color : '#cbd5e1';
+    const desc      = h.desc || h.content || h.content2 || '—';
+    const locPart   = h.location_name ? ` · ${h.location_name}` : (h.counter_name ? ` · ${h.counter_name}` : (h.city_name ? ` · ${h.city_name}` : ''));
+    const datePart  = h.date || '';
+
     html += `
-    <div class="tl-item">
-      <div class="tl-line-wrap"><div class="tl-dot-outer"></div><div class="tl-line"></div></div>
-      <div class="tl-body">
-        <div class="tl-desc">${h.desc || '—'}</div>
-        <div class="tl-meta">${h.time}${loc}</div>
+    <div class="history-item">
+      <div class="history-dot-wrap">
+        <div class="history-dot" style="background:${dotColor}"></div>
+        <div class="history-line"></div>
+      </div>
+      <div class="history-body">
+        <div class="history-desc${isLatest ? ' latest' : ''}">${desc}</div>
+        <div class="history-meta">${datePart}${locPart}</div>
       </div>
     </div>`;
   });
+
   html += `</div>`;
   return html;
 }
 
+// ── Utils ─────────────────────────────────────────────────────────────────────
 function toggleDetail(idx, forceOpen = false) {
   const detail = document.getElementById(`detail-${idx}`);
   const chev   = document.getElementById(`chev-${idx}`);
   const head   = detail.previousElementSibling;
-  const open   = forceOpen || detail.classList.toggle('open');
   if (forceOpen) detail.classList.add('open');
-  chev.classList.toggle('open', detail.classList.contains('open'));
-  head.classList.toggle('open', detail.classList.contains('open'));
+  else           detail.classList.toggle('open');
+  const isOpen = detail.classList.contains('open');
+  chev.classList.toggle('open', isOpen);
+  head.classList.toggle('open', isOpen);
 }
 
 function copyResi(e, resi) {
