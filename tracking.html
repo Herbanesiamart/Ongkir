@@ -25,7 +25,6 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
 
-  /* HEADER */
   .header {
     background: var(--blue); color: #fff;
     padding: 16px 20px;
@@ -34,39 +33,45 @@
   .header h1 { font-size: 18px; font-weight: 700; }
   .header a  { color: #bfdbfe; font-size: 13px; text-decoration: none; }
 
-  /* LAYOUT */
   .wrap { max-width: 680px; margin: 24px auto 48px; padding: 0 16px; }
-
   .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 16px; }
   .f-label { display: block; font-size: 12px; font-weight: 600; color: var(--sub); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+
   textarea.f-input {
-    width: 100%; min-height: 130px; padding: 10px 13px;
+    width: 100%; min-height: 140px; padding: 10px 13px;
     border: 1.5px solid var(--border); border-radius: 8px;
     font-size: 13px; color: var(--text); background: #fff;
     outline: none; resize: vertical; transition: border-color .15s;
-    font-family: 'SF Mono', 'Fira Code', monospace;
-    line-height: 1.6;
+    font-family: 'SF Mono', 'Fira Code', monospace; line-height: 1.7;
   }
   textarea.f-input:focus { border-color: var(--blue); }
+
+  .f-row { display: flex; gap: 10px; margin-top: 12px; align-items: flex-end; }
+  select.f-select {
+    flex: 1; padding: 10px 13px; border: 1.5px solid var(--border); border-radius: 8px;
+    font-size: 13px; color: var(--text); background: #fff; outline: none;
+    transition: border-color .15s; cursor: pointer;
+  }
+  select.f-select:focus { border-color: var(--blue); }
+
   .hint { font-size: 11px; color: var(--sub); margin-top: 6px; }
+  .hint-info { font-size: 11px; color: var(--blue); margin-top: 4px; }
 
   .btn {
-    width: 100%; margin-top: 14px; padding: 12px;
+    flex: 0 0 auto; padding: 11px 22px;
     background: var(--blue); color: #fff; border: none; border-radius: 8px;
     font-size: 14px; font-weight: 600; cursor: pointer; transition: background .15s;
   }
   .btn:hover  { background: #2563eb; }
   .btn:disabled { background: #93c5fd; cursor: default; }
+  .btn-full { width: 100%; margin-top: 14px; padding: 12px; }
 
-  /* STATS BAR */
-  .stats-bar {
-    display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap;
-  }
+  /* STATS */
+  .stats-bar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
   .stat-pill {
     display: flex; align-items: center; gap: 5px;
     background: var(--card); border: 1.5px solid var(--border);
-    border-radius: 20px; padding: 5px 12px;
-    font-size: 12px; font-weight: 600; color: var(--sub);
+    border-radius: 20px; padding: 5px 12px; font-size: 12px; font-weight: 600; color: var(--sub);
   }
   .stat-pill.green  { border-color: var(--green-border); color: var(--green); background: var(--green-bg); }
   .stat-pill.red    { border-color: #fca5a5; color: var(--red); background: var(--red-bg); }
@@ -74,10 +79,7 @@
   .stat-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 
   /* RESI CARD */
-  .resi-card {
-    background: var(--card); border-radius: var(--radius);
-    box-shadow: var(--shadow); margin-bottom: 12px; overflow: hidden;
-  }
+  .resi-card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 10px; overflow: hidden; }
   .resi-head {
     display: flex; align-items: center; justify-content: space-between;
     padding: 13px 16px; cursor: pointer; user-select: none;
@@ -86,7 +88,7 @@
   .resi-head:hover { background: #f8fafc; }
   .resi-head.open  { border-bottom-color: var(--border); }
 
-  .resi-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .resi-left { display: flex; align-items: center; gap: 12px; min-width: 0; overflow: hidden; }
   .status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
   .s-delivered    { background: var(--green); }
   .s-transit      { background: var(--blue); }
@@ -94,14 +96,13 @@
   .s-pickup       { background: #0ea5e9; }
   .s-problem      { background: var(--red); }
   .s-retur        { background: var(--yellow); }
-  .s-unknown      { background: #94a3b8; }
-  .s-error        { background: #94a3b8; }
+  .s-unknown, .s-error, .s-need_courier { background: #94a3b8; }
 
-  .resi-num  { font-size: 13px; font-weight: 700; font-family: 'SF Mono', monospace; }
-  .resi-sub  { font-size: 11px; color: var(--sub); margin-top: 2px; }
+  .resi-num { font-size: 13px; font-weight: 700; font-family: 'SF Mono', monospace; }
+  .resi-sub { font-size: 11px; color: var(--sub); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px; }
   .resi-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
   .status-badge {
-    font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; white-space: nowrap;
   }
   .badge-delivered    { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
   .badge-transit      { background: #eff6ff; color: var(--blue); border: 1px solid #bfdbfe; }
@@ -110,11 +111,11 @@
   .badge-problem      { background: var(--red-bg); color: var(--red); border: 1px solid #fca5a5; }
   .badge-retur        { background: var(--yellow-bg); color: var(--yellow); border: 1px solid #fcd34d; }
   .badge-unknown, .badge-error { background: #f8fafc; color: var(--sub); border: 1px solid var(--border); }
+  .badge-need_courier { background: var(--yellow-bg); color: var(--yellow); border: 1px solid #fcd34d; }
 
-  .chevron { font-size: 12px; color: var(--sub); transition: transform .2s; }
+  .chevron { font-size: 11px; color: var(--sub); transition: transform .2s; }
   .chevron.open { transform: rotate(90deg); }
 
-  /* DETAIL */
   .resi-detail { display: none; padding: 14px 16px; }
   .resi-detail.open { display: block; }
 
@@ -123,7 +124,7 @@
   .meta-item strong { color: var(--text); font-size: 13px; display: block; margin-top: 2px; }
 
   .timeline-title { font-size: 11px; font-weight: 700; color: var(--sub); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
-  .timeline { display: flex; flex-direction: column; gap: 0; }
+  .timeline { display: flex; flex-direction: column; }
   .tl-item { display: flex; gap: 12px; }
   .tl-line-wrap { display: flex; flex-direction: column; align-items: center; }
   .tl-dot-outer { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--blue); background: #fff; flex-shrink: 0; margin-top: 2px; }
@@ -134,14 +135,21 @@
   .tl-desc { font-size: 13px; color: var(--text); }
   .tl-meta { font-size: 11px; color: var(--sub); margin-top: 2px; }
 
+  /* Need courier select */
+  .need-courier-box {
+    background: var(--yellow-bg); border: 1px solid #fcd34d;
+    border-radius: 8px; padding: 10px 12px; font-size: 12px; color: var(--yellow);
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .need-courier-box select { flex: 1; min-width: 140px; padding: 6px 10px; border: 1px solid #fcd34d; border-radius: 6px; font-size: 12px; background: #fff; }
+  .need-courier-box button { padding: 6px 14px; border: none; border-radius: 6px; background: var(--yellow); color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+
   .err-box { font-size: 13px; color: var(--red); background: var(--red-bg); border-radius: 8px; padding: 10px 12px; }
 
-  /* LOADING */
   .loading { text-align: center; padding: 36px 20px; color: var(--sub); font-size: 14px; }
   .spinner { width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto 10px; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* COPY RESI */
   .copy-btn { font-size: 10px; background: #f1f5f9; border: none; border-radius: 4px; padding: 2px 6px; cursor: pointer; color: var(--sub); margin-left: 6px; }
   .copy-btn:hover { background: var(--border); }
 </style>
@@ -154,24 +162,50 @@
 </div>
 
 <div class="wrap">
-
   <div class="card">
     <label class="f-label">Nomor Resi (1 per baris, maks. 30)</label>
     <textarea class="f-input" id="resi-input"
-      placeholder="JNE1234567890&#10;SICEPAT9876543210&#10;JT1234567890&#10;..."></textarea>
-    <div class="hint" id="resi-count-hint">Paste nomor resi, 1 per baris. Ganda otomatis dibuang.</div>
-    <button class="btn" id="btn-cek" onclick="doCek()">🔍 Cek Semua Resi</button>
+      placeholder="JNE1234567890&#10;SICEPAT9876543210&#10;LP1234567890&#10;..."></textarea>
+
+    <div class="f-row">
+      <div style="flex:1">
+        <div class="hint" id="resi-count-hint">Paste nomor resi, 1 per baris.</div>
+        <div class="hint-info">Kurir terdeteksi otomatis dari prefix resi. Kalau tidak terdeteksi, bisa pilih manual di bawah.</div>
+      </div>
+    </div>
+
+    <div class="f-row">
+      <select class="f-select" id="default-courier">
+        <option value="">Kurir default (kalau tidak terdeteksi otomatis)</option>
+        <option value="JNE">JNE</option>
+        <option value="JT">J&amp;T Express</option>
+        <option value="SiCepat">SiCepat</option>
+        <option value="lion">Lion Parcel</option>
+        <option value="SAP">SAP Express</option>
+        <option value="anteraja">Anteraja</option>
+        <option value="Ninja">Ninja Xpress</option>
+        <option value="iDexpress">iDexpress</option>
+        <option value="POS">POS Indonesia</option>
+      </select>
+      <button class="btn" onclick="doCek()">🔍 Cek Semua</button>
+    </div>
   </div>
 
   <div id="results-area" style="display:none"></div>
-
 </div>
 
 <script>
+const COURIER_LABEL = {
+  JNE:'JNE', JT:'J&T Express', SiCepat:'SiCepat', lion:'Lion Parcel',
+  SAP:'SAP Express', anteraja:'Anteraja', Ninja:'Ninja Xpress',
+  iDexpress:'iDexpress', POS:'POS Indonesia',
+};
+const COURIER_OPTIONS = Object.entries(COURIER_LABEL).map(([v, l]) =>
+  `<option value="${v}">${l}</option>`
+).join('');
+
 // ── Input counter ─────────────────────────────────────────────────────────────
 const resiInput = document.getElementById('resi-input');
-const hint      = document.getElementById('resi-count-hint');
-
 resiInput.addEventListener('input', updateCount);
 
 function parseResi() {
@@ -184,72 +218,101 @@ function parseResi() {
 
 function updateCount() {
   const list = parseResi();
-  if (!list.length) {
-    hint.textContent = 'Paste nomor resi, 1 per baris. Ganda otomatis dibuang.';
-  } else {
-    hint.textContent = `${list.length} resi terdeteksi${list.length > 30 ? ' — maks. 30, sisanya diabaikan' : ''}`;
-  }
+  const hint = document.getElementById('resi-count-hint');
+  if (!list.length) hint.textContent = 'Paste nomor resi, 1 per baris.';
+  else hint.textContent = `${list.length} resi terdeteksi${list.length > 30 ? ' — maks. 30, sisanya diabaikan' : ''}`;
 }
 
 // ── Cek ──────────────────────────────────────────────────────────────────────
 const resultsArea = document.getElementById('results-area');
-const btnCek      = document.getElementById('btn-cek');
+let lastResults = [];
 
-async function doCek() {
-  const resiList = parseResi().slice(0, 30);
+async function doCek(retryItems = null) {
+  const resiList = retryItems || parseResi().slice(0, 30).map(r => ({ resi: r, courier: null }));
   if (!resiList.length) { alert('Masukkan minimal 1 nomor resi.'); return; }
 
-  btnCek.disabled = true;
-  btnCek.textContent = 'Mengecek…';
+  const defaultCourier = document.getElementById('default-courier').value || null;
+  // Pasang default courier ke yang belum punya courier
+  const items = resiList.map(r => ({ resi: r.resi, courier: r.courier || defaultCourier }));
+
   resultsArea.style.display = 'block';
-  resultsArea.innerHTML = `<div class="loading"><div class="spinner"></div>Mengecek ${resiList.length} resi secara paralel…</div>`;
+  resultsArea.innerHTML = `<div class="loading"><div class="spinner"></div>Mengecek ${items.length} resi secara paralel…</div>`;
 
   try {
     const r = await fetch('/api/track', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ resi: resiList }),
+      body: JSON.stringify({ resi: items }),
     });
     const json = await r.json();
     if (!json.ok) throw new Error(json.error || 'Gagal');
+    lastResults = json.results;
     renderResults(json.results);
   } catch (e) {
     resultsArea.innerHTML = `<div class="err-box">⚠ Gagal terhubung ke server: ${e.message}</div>`;
-  } finally {
-    btnCek.disabled = false;
-    btnCek.textContent = '🔍 Cek Semua Resi';
+  }
+}
+
+// ── Retry satu resi dengan kurir yang dipilih ─────────────────────────────────
+async function retryWithCourier(resi, selectEl) {
+  const courier = selectEl.value;
+  if (!courier) return;
+  selectEl.disabled = true;
+  selectEl.nextElementSibling.disabled = true;
+
+  try {
+    const r = await fetch('/api/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resi: [{ resi, courier }] }),
+    });
+    const json = await r.json();
+    if (!json.ok || !json.results?.[0]) throw new Error('Gagal');
+
+    // Update lastResults dan re-render
+    const idx = lastResults.findIndex(x => x.resi === resi);
+    if (idx !== -1) lastResults[idx] = json.results[0];
+    renderResults(lastResults);
+    // Buka card yang baru diretry
+    const cardIdx = lastResults.findIndex(x => x.resi === resi);
+    if (cardIdx !== -1) setTimeout(() => toggleDetail(cardIdx, true), 50);
+  } catch {
+    selectEl.disabled = false;
+    selectEl.nextElementSibling.disabled = false;
   }
 }
 
 // ── Render ────────────────────────────────────────────────────────────────────
 function renderResults(results) {
-  const delivered = results.filter(r => r.ok && r.statusType === 'delivered').length;
-  const problem   = results.filter(r => r.ok && (r.statusType === 'problem' || r.statusType === 'retur')).length;
-  const notFound  = results.filter(r => !r.ok).length;
-  const transit   = results.length - delivered - problem - notFound;
+  const delivered   = results.filter(r => r.ok && r.statusType === 'delivered').length;
+  const problem     = results.filter(r => r.ok && (r.statusType === 'problem' || r.statusType === 'retur')).length;
+  const needCourier = results.filter(r => r.needCourier).length;
+  const notFound    = results.filter(r => !r.ok && !r.needCourier).length;
+  const transit     = results.length - delivered - problem - needCourier - notFound;
 
   let html = `<div class="stats-bar">
     <div class="stat-pill">${results.length} total</div>
-    ${delivered ? `<div class="stat-pill green"><div class="stat-dot"></div>${delivered} terkirim</div>` : ''}
-    ${transit   ? `<div class="stat-pill"><div class="stat-dot" style="background:var(--blue)"></div>${transit} proses</div>` : ''}
-    ${problem   ? `<div class="stat-pill red"><div class="stat-dot"></div>${problem} bermasalah</div>` : ''}
-    ${notFound  ? `<div class="stat-pill yellow"><div class="stat-dot"></div>${notFound} tidak ditemukan</div>` : ''}
+    ${delivered   ? `<div class="stat-pill green"><div class="stat-dot"></div>${delivered} terkirim</div>` : ''}
+    ${transit     ? `<div class="stat-pill"><div class="stat-dot" style="background:var(--blue)"></div>${transit} proses</div>` : ''}
+    ${problem     ? `<div class="stat-pill red"><div class="stat-dot"></div>${problem} bermasalah</div>` : ''}
+    ${needCourier ? `<div class="stat-pill yellow"><div class="stat-dot"></div>${needCourier} pilih kurir</div>` : ''}
+    ${notFound    ? `<div class="stat-pill red"><div class="stat-dot"></div>${notFound} tidak ditemukan</div>` : ''}
   </div>`;
 
   results.forEach((r, idx) => {
-    const type = r.ok ? r.statusType : 'error';
-    const label = r.ok ? r.statusLabel : 'Tidak Ditemukan';
-    const courier = r.courier ? ` · ${r.courier}` : '';
-    const lastDesc = r.ok && r.history?.length ? r.history[0].desc : (r.error || '');
+    const type  = r.needCourier ? 'need_courier' : (r.ok ? r.statusType : 'error');
+    const label = r.needCourier ? 'Pilih Kurir' : (r.ok ? r.statusLabel : 'Tidak Ditemukan');
+    const lastDesc = r.ok && r.history?.length ? r.history[0].desc : '';
+    const courierTxt = r.courierLabel ? `${r.courierLabel} · ` : '';
 
     html += `
     <div class="resi-card" id="card-${idx}">
       <div class="resi-head" onclick="toggleDetail(${idx})">
         <div class="resi-left">
           <div class="status-dot s-${type}"></div>
-          <div>
+          <div style="min-width:0">
             <div class="resi-num">${r.resi}<button class="copy-btn" onclick="copyResi(event,'${r.resi}')">copy</button></div>
-            <div class="resi-sub">${courier ? courier.replace(' · ', '') : ''}${lastDesc ? ` · ${lastDesc.slice(0, 60)}${lastDesc.length > 60 ? '…' : ''}` : ''}</div>
+            <div class="resi-sub">${courierTxt}${lastDesc ? lastDesc.slice(0, 70) + (lastDesc.length > 70 ? '…' : '') : (r.error || '')}</div>
           </div>
         </div>
         <div class="resi-right">
@@ -267,19 +330,23 @@ function renderResults(results) {
 }
 
 function renderDetail(r) {
-  if (!r.ok) {
-    return `<div class="err-box">⚠ ${r.error}</div>`;
+  // Butuh pilih kurir
+  if (r.needCourier) {
+    return `<div class="need-courier-box">
+      ⚠ Kurir tidak terdeteksi otomatis dari nomor resi ini. Pilih manual:
+      <select onchange="">${COURIER_OPTIONS}</select>
+      <button onclick="retryWithCourier('${r.resi}', this.previousElementSibling)">Cek →</button>
+    </div>`;
   }
 
+  if (!r.ok) return `<div class="err-box">⚠ ${r.error}</div>`;
+
   let html = '';
-
-  // Meta info
   const metas = [];
-  if (r.courier)     metas.push({ label: 'Kurir',  val: r.courier });
-  if (r.origin)      metas.push({ label: 'Pengirim', val: r.origin });
-  if (r.destination) metas.push({ label: 'Tujuan',  val: r.destination });
-  if (r.lastTime)    metas.push({ label: 'Update Terakhir', val: r.lastTime });
-
+  if (r.courierLabel)  metas.push({ label: 'Kurir',    val: r.courierLabel });
+  if (r.origin)        metas.push({ label: 'Pengirim', val: r.origin });
+  if (r.destination)   metas.push({ label: 'Tujuan',   val: r.destination });
+  if (r.lastTime)      metas.push({ label: 'Update',   val: r.lastTime });
   if (metas.length) {
     html += `<div class="meta-row">${metas.map(m =>
       `<div class="meta-item">${m.label}<strong>${m.val}</strong></div>`
@@ -291,35 +358,30 @@ function renderDetail(r) {
     return html;
   }
 
-  html += `<div class="timeline-title">Riwayat Pengiriman</div>
-  <div class="timeline">`;
-
+  html += `<div class="timeline-title">Riwayat Pengiriman</div><div class="timeline">`;
   r.history.forEach(h => {
     const loc = h.loc ? ` · ${h.loc}` : '';
     html += `
     <div class="tl-item">
-      <div class="tl-line-wrap">
-        <div class="tl-dot-outer"></div>
-        <div class="tl-line"></div>
-      </div>
+      <div class="tl-line-wrap"><div class="tl-dot-outer"></div><div class="tl-line"></div></div>
       <div class="tl-body">
         <div class="tl-desc">${h.desc || '—'}</div>
         <div class="tl-meta">${h.time}${loc}</div>
       </div>
     </div>`;
   });
-
   html += `</div>`;
   return html;
 }
 
-function toggleDetail(idx) {
+function toggleDetail(idx, forceOpen = false) {
   const detail = document.getElementById(`detail-${idx}`);
   const chev   = document.getElementById(`chev-${idx}`);
   const head   = detail.previousElementSibling;
-  const open   = detail.classList.toggle('open');
-  chev.classList.toggle('open', open);
-  head.classList.toggle('open', open);
+  const open   = forceOpen || detail.classList.toggle('open');
+  if (forceOpen) detail.classList.add('open');
+  chev.classList.toggle('open', detail.classList.contains('open'));
+  head.classList.toggle('open', detail.classList.contains('open'));
 }
 
 function copyResi(e, resi) {
