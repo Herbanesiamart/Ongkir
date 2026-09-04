@@ -1,5 +1,6 @@
-// api/track.js — Cek resi massal via Mengantar (sama persis dengan CS Input)
-const https = require('https');
+// api/track.js — Cek resi massal via Mengantar + POS Indonesia (sama persis dengan CS Input)
+const https        = require('https');
+const querystring  = require('querystring');
 
 const MENGANTAR_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
@@ -106,6 +107,70 @@ function mapStage({ resi, statusCategory, entries }) {
   return { stage, step: stage === 'SAMPAI' ? 5 : reachedStep };
 }
 
+// ── POS Indonesia (sama persis dengan lib/mengantar.js + _trNormalizePos CS Input) ──
+function trackPos(resi) {
+  const body = querystring.stringify({ kode_booking: resi });
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'www.bosampuh.id',
+      path:     '/api_home/lacak_kiriman',
+      method:   'POST',
+      headers: {
+        'Content-Type':     'application/x-www-form-urlencoded; charset=UTF-8',
+        'Content-Length':   Buffer.byteLength(body),
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept':           'application/json, text/javascript, */*; q=0.01',
+        'User-Agent':       'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36',
+        'Referer':          'https://www.bosampuh.id/',
+        'Origin':           'https://www.bosampuh.id',
+      },
+    };
+    const req = https.request(options, (resp) => {
+      let raw = '';
+      resp.on('data', chunk => raw += chunk);
+      resp.on('end', () => {
+        try {
+          const parsed = typeof raw === 'string' && raw.startsWith('"')
+            ? JSON.parse(JSON.parse(raw))
+            : JSON.parse(raw);
+          resolve({ success: true, data: parsed });
+        } catch (e) { reject(new Error('Parse error: ' + raw.slice(0, 200))); }
+      });
+    });
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
+}
+
+function normalizePos(json) {
+  if (!json || !json.success || !json.data) return null;
+  const d = json.data;
+  const history = Array.isArray(d.connote_history) ? d.connote_history : [];
+  const destNopen = d.connote_customfield?.destination_nopen || null;
+  const entries = history.map(h => ({
+    desc:          [h.content, h.content2].filter(Boolean).join(' '),
+    group:         null,
+    tag:           null,
+    isPos:         true,
+    atDestination: !!(destNopen && h.state === 'INLOCATION' && h.nopen === destNopen),
+    reasonDelivery: h.reason_delivery || null,
+  }));
+  // Buat rawHistory dengan format seragam untuk ditampilkan
+  const rawHistory = history.map(h => ({
+    desc:  [h.content, h.content2].filter(Boolean).join(' '),
+    date:  h.timestamp || h.date || '',
+    location_name: h.city_name || h.nopen || '',
+  }));
+  return {
+    statusCategory: d.connote_state || '',
+    entries,
+    rawHistory,
+    receiver: d.connote_receiver_name || null,
+    city:     null,
+  };
+}
+
 async function trackOne({ resi, courier }) {
   const courierCode = courier || detectCourier(resi);
   if (!courierCode) {
@@ -113,12 +178,20 @@ async function trackOne({ resi, courier }) {
   }
 
   try {
-    const url  = `https://app.mengantar.com/api/order/getPublic?tracking_number=${encodeURIComponent(resi)}&courier=${encodeURIComponent(courierCode)}`;
-    const json = await httpGetJson(url);
-    const norm = normalizeMengantar(json);
+    let norm;
+
+    // POS Indonesia — endpoint berbeda
+    if (courierCode === 'POS') {
+      const json = await trackPos(resi);
+      norm = normalizePos(json);
+    } else {
+      const url  = `https://app.mengantar.com/api/order/getPublic?tracking_number=${encodeURIComponent(resi)}&courier=${encodeURIComponent(courierCode)}`;
+      const json = await httpGetJson(url);
+      norm = normalizeMengantar(json);
+    }
 
     if (!norm) {
-      return { resi, ok: false, error: json?.message || json?.error || 'Resi tidak ditemukan' };
+      return { resi, ok: false, error: 'Resi tidak ditemukan' };
     }
 
     const { stage, step } = mapStage({ resi, ...norm });
@@ -130,7 +203,7 @@ async function trackOne({ resi, courier }) {
       receiver:     norm.receiver,
       city:         norm.city,
       stage, step,
-      history:      norm.rawHistory, // raw dari Mengantar, oldest first
+      history:      norm.rawHistory,
     };
   } catch (e) {
     return { resi, ok: false, error: e.message };
