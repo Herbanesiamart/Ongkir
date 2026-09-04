@@ -158,7 +158,6 @@ module.exports = async function handler(req, res) {
   items = items.filter(r => { if (seen.has(r.resi)) return false; seen.add(r.resi); return true; });
 
   if (!items.length) return res.status(400).json({ error: 'Tidak ada nomor resi valid' });
-  if (items.length > 30) return res.status(400).json({ error: 'Maksimal 30 resi sekaligus' });
 
   const results = await Promise.all(items.map(trackOne));
   return res.json({ ok: true, results });
