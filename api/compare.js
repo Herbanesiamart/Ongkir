@@ -110,10 +110,11 @@ module.exports = async function handler(req, res) {
   // Kalau MENGANTAR_API_KEY ada → pakai URL dengan key (lebih reliable)
   // Kalau tidak ada → coba endpoint public tanpa key
   let scoreMap = {};
+  let _perfDebug = null;
   if (rawResults[0]?.ok) {
     try {
       const mKey = process.env.MENGANTAR_API_KEY;
-      if (!mKey) throw new Error('MENGANTAR_API_KEY belum diset');
+      if (!mKey) throw new Error('MENGANTAR_API_KEY belum diset di Vercel env');
       const perfUrl = `https://api-public.mengantar.com/api/public/${mKey}/order/getPerformancePublic`;
       const perfR = await fetch(perfUrl, {
         method: 'POST',
@@ -121,16 +122,14 @@ module.exports = async function handler(req, res) {
         body: JSON.stringify({ city: kabupaten || '', allEstimateData: rawResults[0].data }),
       });
       const perfJson = await perfR.json();
-      console.log('[perf] status:', perfR.status, 'success:', perfJson?.success, 'url:', perfUrl);
+      _perfDebug = { status: perfR.status, success: perfJson?.success, msg: perfJson?.message, dataKeys: perfJson?.data ? Object.keys(perfJson.data) : null };
       if (perfJson?.success) {
         const recommended = (perfJson.data?.recommended || '').toLowerCase();
         (perfJson.data?.couriers || []).forEach(c => {
           scoreMap[c.key.toLowerCase()] = { score: c.score, recommended: c.key.toLowerCase() === recommended };
         });
-      } else {
-        console.log('[perf] response:', JSON.stringify(perfJson).slice(0, 300));
       }
-    } catch (e) { console.error('[perf] error:', e.message); }
+    } catch (e) { _perfDebug = { error: e.message }; }
   }
 
   // Susun per kurir
@@ -193,5 +192,6 @@ module.exports = async function handler(req, res) {
     destination: { id: destination_id, kecamatan, kabupaten, provinsi },
     couriers: filtered,
     gudangSummary: summaries,
+    _perfDebug,
   });
 };
