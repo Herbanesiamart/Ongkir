@@ -113,12 +113,11 @@ module.exports = async function handler(req, res) {
   if (rawResults[0]?.ok) {
     try {
       const mKey = process.env.MENGANTAR_API_KEY;
-      const perfUrl = mKey
-        ? `${SEARCH_BASE}/api/public/${mKey}/order/getPerformancePublic`
-        : `${SEARCH_BASE}/api/public/order/getPerformancePublic`;
+      if (!mKey) throw new Error('MENGANTAR_API_KEY belum diset');
+      const perfUrl = `https://api-public.mengantar.com/api/public/${mKey}/order/getPerformancePublic`;
       const perfR = await fetch(perfUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        headers: { ...MENGANTAR_HEADERS, 'Content-Type': 'application/json' },
         body: JSON.stringify({ city: kabupaten || '', allEstimateData: rawResults[0].data }),
       });
       const perfJson = await perfR.json();
