@@ -115,14 +115,14 @@ module.exports = async function handler(req, res) {
     try {
       const mKey = process.env.MENGANTAR_API_KEY;
       if (!mKey) throw new Error('MENGANTAR_API_KEY belum diset di Vercel env');
-      const perfUrl = `https://api-public.mengantar.com/api/public/${mKey}/order/getPerformancePublic`;
+      const perfUrl = `https://api-public.mengantar.com/api/public/${mKey}/getPerformancePublic`;
       const perfR = await fetch(perfUrl, {
         method: 'POST',
         headers: { ...MENGANTAR_HEADERS, 'Content-Type': 'application/json' },
         body: JSON.stringify({ city: kabupaten || '', allEstimateData: rawResults[0].data }),
       });
       const perfJson = await perfR.json();
-      _perfDebug = { status: perfR.status, success: perfJson?.success, msg: perfJson?.message, dataKeys: perfJson?.data ? Object.keys(perfJson.data) : null };
+      _perfDebug = { status: perfR.status, success: perfJson?.success, msg: perfJson?.message, dataKeys: perfJson?.data ? Object.keys(perfJson.data) : null, urlSuffix: perfUrl.split('/api/public/')[1]?.replace(mKey, '***') };
       if (perfJson?.success) {
         const recommended = (perfJson.data?.recommended || '').toLowerCase();
         (perfJson.data?.couriers || []).forEach(c => {
