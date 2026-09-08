@@ -1,6 +1,13 @@
 // api/compare.js — Proxy Mengantar: search alamat + bandingkan ongkir semua gudang
 const { createClient } = require('@supabase/supabase-js');
-const SEARCH_BASE = 'https://api-public.mengantar.com';
+const SEARCH_BASE = 'https://app.mengantar.com';
+
+const MENGANTAR_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+  'Accept':     'application/json',
+  'Referer':    'https://www.mengantar.com/',
+  'Origin':     'https://www.mengantar.com',
+};
 
 const COURIER_MAP = {
   JNE:       'JNE',
@@ -42,8 +49,8 @@ module.exports = async function handler(req, res) {
     if (!keyword) return res.status(400).json({ error: 'keyword wajib' });
     try {
       const r = await fetch(
-        `${SEARCH_BASE}/api/public/csorder/address/search?keyword=${encodeURIComponent(keyword)}`,
-        { headers: { Accept: 'application/json' } }
+        `${SEARCH_BASE}/api/address/autofill?keyword=${encodeURIComponent(keyword)}`,
+        { headers: MENGANTAR_HEADERS }
       );
       const json = await r.json();
       const list = (json?.data || []).slice(0, 10).map(d => ({
@@ -90,7 +97,7 @@ module.exports = async function handler(req, res) {
     try {
       const r = await fetch(
         `${SEARCH_BASE}/api/order/allEstimatePublic?origin_id=${g.origin_id}&destination_id=${destination_id}&weight=${weight}`,
-        { headers: { Accept: 'application/json' } }
+        { headers: MENGANTAR_HEADERS }
       );
       const json = await r.json();
       return { gudang: g, data: json?.data || {}, ok: !!json?.success };
