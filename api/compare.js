@@ -110,26 +110,41 @@ module.exports = async function handler(req, res) {
   // Kalau MENGANTAR_API_KEY ada → pakai URL dengan key (lebih reliable)
   // Kalau tidak ada → coba endpoint public tanpa key
   let scoreMap = {};
-  let _perfDebug = null;
+  let _perfDebug = [];
   if (rawResults[0]?.ok) {
-    try {
-      const mKey = process.env.MENGANTAR_API_KEY;
-      if (!mKey) throw new Error('MENGANTAR_API_KEY belum diset di Vercel env');
-      const perfUrl = `https://api-public.mengantar.com/api/public/${mKey}/getPerformancePublic`;
-      const perfR = await fetch(perfUrl, {
-        method: 'POST',
-        headers: { ...MENGANTAR_HEADERS, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ city: kabupaten || '', allEstimateData: rawResults[0].data }),
-      });
-      const perfJson = await perfR.json();
-      _perfDebug = { status: perfR.status, success: perfJson?.success, msg: perfJson?.message, dataKeys: perfJson?.data ? Object.keys(perfJson.data) : null, urlSuffix: perfUrl.split('/api/public/')[1]?.replace(mKey, '***') };
-      if (perfJson?.success) {
-        const recommended = (perfJson.data?.recommended || '').toLowerCase();
-        (perfJson.data?.couriers || []).forEach(c => {
-          scoreMap[c.key.toLowerCase()] = { score: c.score, recommended: c.key.toLowerCase() === recommended };
-        });
+    const mKey = process.env.MENGANTAR_API_KEY;
+    if (!mKey) {
+      _perfDebug = [{ error: 'MENGANTAR_API_KEY belum diset di Vercel env' }];
+    } else {
+      const body = JSON.stringify({ city: kabupaten || '', allEstimateData: rawResults[0].data });
+      const candidates = [
+        `https://app.mengantar.com/api/public/${mKey}/order/getPerformancePublic`,
+        `https://app.mengantar.com/api/public/${mKey}/getPerformancePublic`,
+        `https://api-public.mengantar.com/api/public/${mKey}/order/getPerformancePublic`,
+        `https://api-public.mengantar.com/api/public/${mKey}/getPerformancePublic`,
+      ];
+      for (const perfUrl of candidates) {
+        try {
+          const perfR = await fetch(perfUrl, {
+            method: 'POST',
+            headers: { ...MENGANTAR_HEADERS, 'Content-Type': 'application/json' },
+            body,
+          });
+          const perfJson = await perfR.json();
+          const info = { url: perfUrl.replace(mKey, '***'), status: perfR.status, success: perfJson?.success, msg: perfJson?.message, dataKeys: perfJson?.data ? Object.keys(perfJson.data) : null };
+          _perfDebug.push(info);
+          if (perfJson?.success) {
+            const recommended = (perfJson.data?.recommended || '').toLowerCase();
+            (perfJson.data?.couriers || []).forEach(c => {
+              scoreMap[c.key.toLowerCase()] = { score: c.score, recommended: c.key.toLowerCase() === recommended };
+            });
+            break; // ketemu yang jalan, stop
+          }
+        } catch (e) {
+          _perfDebug.push({ url: perfUrl.replace(mKey, '***'), error: e.message });
+        }
       }
-    } catch (e) { _perfDebug = { error: e.message }; }
+    }
   }
 
   // Susun per kurir
